@@ -28,7 +28,7 @@ colcon build
 
 This assumes ubuntu 22.04, on different ubuntu gz-garden has to be installed separately.
 
-1. Install gz-garden.
+0. Install gz-garden.
 ```
 sudo apt-get update
 sudo apt-get install lsb-release wget gnupg
@@ -36,6 +36,9 @@ sudo wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/p
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
 sudo apt-get update
 sudo apt-get install gz-garden
+```
+1. Update gazebo bridge.
+```
 sudo apt remove ros-humble-ros-gz-bridge
 apt-get install ros-humble-ros-gzgarden
 ```
@@ -67,6 +70,6 @@ colcon build
 
 5. Run simulation
 ```
-source install local_setup.sh
+source install/local_setup.sh
 ros2 launch tucan_sim tucan_sim.launch.py
 ```
