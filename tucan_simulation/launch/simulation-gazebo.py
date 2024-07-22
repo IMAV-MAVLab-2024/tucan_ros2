@@ -91,7 +91,8 @@ def main():
     # Launch gazebo simulation
     print('> Launching gazebo simulation...')
     if not args.dryrun:
-        cmd = f'GZ_SIM_RESOURCE_PATH={args.model_store}/models gz sim -r {args.model_store}/worlds/{args.world}.sdf'
+        config_dir = os.path.join(get_package_share_directory('tucan_simulation'), 'gz_config', 'default.config')
+        cmd = f'GZ_SIM_RESOURCE_PATH={args.model_store}/models gz sim -r {args.model_store}/worlds/{args.world}.sdf --gui-config {config_dir}'
         if args.headless:
             cmd = f'{cmd} -s'
 

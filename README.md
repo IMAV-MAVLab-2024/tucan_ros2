@@ -37,6 +37,8 @@ sudo wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/p
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
 sudo apt-get update
 sudo apt-get install gz-garden
+sudo apt remove ros-humble-ros-gz-bridge
+apt-get install ros-humble-ros-gzgarden
 ```
 
 2. Build the micro-XRCE agent, First go to some desired directory then run:
@@ -51,7 +53,7 @@ sudo make install
 sudo ldconfig /usr/local/lib/
 ```
 
-3. Clone our px4 in correct location and build:
+3. Clone our px4 repository in the correct location and build:
 ```
 cd ~
 git clone git@github.com:IMAV-MAVLab-2024/PX4-Autopilot.git
