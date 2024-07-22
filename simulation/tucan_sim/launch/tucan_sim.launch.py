@@ -14,19 +14,20 @@
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
-from launch.actions import RegisterEventHandler, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import RegisterEventHandler
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch import LaunchContext, SomeSubstitutionsType, Substitution
-from launch.utilities import perform_substitutions
-from typing import List, Literal
 import os
-from launch.substitutions import LaunchConfiguration, PythonExpression
-from subprocess import Popen, PIPE
-from shlex import split
+from launch.substitutions import LaunchConfiguration
+import signal
+import subprocess
+
+# Signal handler for SIGINT
+def sigint_handler(signum, frame):
+    subprocess.run(['pgrep -f QGroundControl | xargs kill -9'], shell=True)
+    #sys.exit(0)
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
@@ -51,6 +52,7 @@ def generate_launch_description():
     px4_script_path = os.path.join(os.path.dirname(__file__), 'px4.launch.sh')
     microxrce_script_path = os.path.join(os.path.dirname(__file__), 'microxrce.launch.sh')
     gazebo_script_path = os.path.join(os.path.dirname(__file__), 'gazebo.launch.sh')
+    kill_qgc_path = os.path.join(os.path.dirname(__file__), 'kill_qgc.sh')
     
     px4_process = ExecuteProcess(
         cmd=['/bin/bash', px4_script_path],
@@ -77,6 +79,9 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Register the SIGINT handler
+    signal.signal(signal.SIGINT, sigint_handler)
+
     ld = LaunchDescription([
         # Launch gazebo environment
         use_sim_time_arg,
@@ -98,7 +103,11 @@ def generate_launch_description():
         microxrce_process,
         use_groundcontrol,
         ExecuteProcess(cmd=['QGroundControl.AppImage'],
-                       condition=IfCondition(LaunchConfiguration('groundcontrol')))
+                       condition=IfCondition(LaunchConfiguration('groundcontrol')),
+                       on_exit=ExecuteProcess(
+                            cmd=['/bin/bash', kill_qgc_path],
+                            output='screen'
+                            ))
     ])
 
     return ld
