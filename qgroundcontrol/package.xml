@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>qgroundcontrol</name>
+  <version>0.0.0</version>
+  <description>The qgroundcontrol package</description>
+
+  <maintainer email="alejandro@osrfoundation.org">Alejandro Hernández</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://dev.qgroundcontrol.com</url>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
