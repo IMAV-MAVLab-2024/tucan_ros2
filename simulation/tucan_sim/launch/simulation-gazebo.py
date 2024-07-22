@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--gz_ip', help='Outgoing network interface to use for traffic',required=False)
     parser.add_argument('--interactive',help='Run in interactive mode', required=False, default=False, action='store_true')
     parser.add_argument('--model_download_source', help='Path to directory containing model files', required=False, default=DEFAULT_DOWNLOAD_DIR)
-    parser.add_argument('--model_store', help='Path to model storage directory', required=False, default=(get_package_share_directory('tucan_simulation')))
+    parser.add_argument('--model_store', help='Path to model storage directory', required=False, default=(get_package_share_directory('tucan_sim')))
     parser.add_argument('--overwrite', help='Overwrite existing model directories', required=False, default=False, action='store_true')
     parser.add_argument('--dryrun', help='Test in dryrun. Do not launch gazebo', required=False, default=False, action='store_true')
     parser.add_argument('--headless', help='Run Gazebo without GUI', required=False, default=False, action='store_true')
@@ -91,7 +91,7 @@ def main():
     # Launch gazebo simulation
     print('> Launching gazebo simulation...')
     if not args.dryrun:
-        config_dir = os.path.join(get_package_share_directory('tucan_simulation'), 'gz_config', 'default.config')
+        config_dir = os.path.join(get_package_share_directory('tucan_sim'), 'gz_config', 'default.config')
         cmd = f'GZ_SIM_RESOURCE_PATH={args.model_store}/models gz sim -r {args.model_store}/worlds/{args.world}.sdf --gui-config {config_dir}'
         if args.headless:
             cmd = f'{cmd} -s'

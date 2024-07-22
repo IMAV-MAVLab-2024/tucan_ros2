@@ -3,7 +3,7 @@ import os
 
 from setuptools import find_packages, setup
 
-package_name = 'tucan_simulation'
+package_name = 'tucan_sim'
 
 data_files=[
         ('share/ament_index/resource_index/packages',

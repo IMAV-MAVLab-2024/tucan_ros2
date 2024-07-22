@@ -2,15 +2,16 @@
 Repository for the TU-Delft team of the IMAV 2024 Indoor competition. Works with ROS2 Humble. WIP
 
 ## 1. Installation
-1. Add the apterion debian repository.
-```
-curl -1sLf 'https://dl.cloudsmith.io/public/auterion/public/setup.deb.sh' | sudo -E bash
-```
-2. Clone the repository into the following folder structure:
+
+1. Clone this repository into the following folder structure:
 ```
 ├── ros2_ws                    
 │   ├── src          
 │   │   ├── tucan_ros2     # This repository
+```
+2. Add the apterion debian repository.
+```
+curl -1sLf 'https://dl.cloudsmith.io/public/auterion/public/setup.deb.sh' | sudo -E bash
 ```
 
 3. Install dependencies using rosdep:
@@ -41,8 +42,9 @@ sudo apt remove ros-humble-ros-gz-bridge
 apt-get install ros-humble-ros-gzgarden
 ```
 
-2. Build the micro-XRCE agent, First go to some desired directory then run:
+2. Build the micro-XRCE agent:
 ```
+cd ~    # or any  otherdirectory you want
 git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
 cd Micro-XRCE-DDS-Agent
 mkdir build
@@ -68,5 +70,5 @@ colcon build
 5. Run simulation
 ```
 source install local_setup.sh
-ros2 launch tucan_simulation px4_sim_simple.launch.py
+ros2 launch tucan_sim tucan_sim.launch.py
 ```

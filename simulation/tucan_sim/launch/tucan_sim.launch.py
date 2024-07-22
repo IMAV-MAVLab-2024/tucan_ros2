@@ -39,8 +39,8 @@ def generate_launch_description():
                                               choices=['true', 'false'],
                                               description='Start ground control station.')
 
-    world_pkgs = get_package_share_directory('tucan_simulation')
-    gateway_models_dir = get_package_share_directory('tucan_simulation')
+    world_pkgs = get_package_share_directory('tucan_sim')
+    gateway_models_dir = get_package_share_directory('tucan_sim')
 
     os.environ['PX4_GZ_MODEL_POSE'] =  '0, 0, .2, 0, 0, 0'
     os.environ['GZ_SIM_RESOURCE_PATH'] = ':' + os.path.join(world_pkgs, 'worlds')

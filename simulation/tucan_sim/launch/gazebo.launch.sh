@@ -3,7 +3,7 @@
 # Launch one drone and bridge
 
 get_ros2_package_share_dir() {
-    package_name="tucan_simulation"
+    package_name="tucan_sim"
     
     # Get the install prefix of the package
     package_prefix=$(ros2 pkg prefix "$package_name")
