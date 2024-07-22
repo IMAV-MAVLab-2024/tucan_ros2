@@ -1,0 +1,6 @@
+[submodule "px4_msgs"]
+	path = px4_msgs
+	url = git@github.com:IMAV-MAVLab-2024/px4_msgs.git
+[submodule "px4-ros2-interface-lib"]
+	path = px4-ros2-interface-lib
+	url = git@github.com:IMAV-MAVLab-2024/px4-ros2-interface-lib.git
