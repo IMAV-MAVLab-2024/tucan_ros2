@@ -9,15 +9,13 @@ Repository for the TU-Delft team of the IMAV 2024 Indoor competition. Works with
 │   ├── src          
 │   │   ├── tucan_ros2     # This repository
 ```
-2. Add the apterion debian repository.
+2. Initialize submodules.
 ```
-curl -1sLf 'https://dl.cloudsmith.io/public/auterion/public/setup.deb.sh' | sudo -E bash
+git submodule update --init --recursive
 ```
 
 3. Install dependencies using rosdep:
 ```
-sudo apt-get install ros-humble-px4-msgs
-sudo apt-get install ros-humble-px4-ros2-cpp
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
