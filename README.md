@@ -58,8 +58,13 @@ git clone git@github.com:IMAV-MAVLab-2024/PX4-Autopilot.git
 make px4_sitl
 ```
 
-
-4. Run simulation
+4. Build
 ```
+colcon build
+```
+
+5. Run simulation
+```
+source install local_setup.sh
 ros2 launch tucan_simulation px4_sim_simple.launch.py
 ```

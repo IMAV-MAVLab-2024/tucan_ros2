@@ -27,6 +27,4 @@ get_ros2_package_share_dir() {
 share_dir=$(get_ros2_package_share_dir "$package_name")
 
 cd $share_dir
-echo $share_dir
-#echo $1
 python3 launch/simulation-gazebo.py

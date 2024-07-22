@@ -28,133 +28,6 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from subprocess import Popen, PIPE
 from shlex import split
 
-
-class WorldPoseFromSdfFrame(Substitution):
-    """Substitution that retrieves a frame from SDF."""
-
-    def __init__(self,
-                 frame_name: SomeSubstitutionsType,
-                 world_name: SomeSubstitutionsType,
-                 model_pose: SomeSubstitutionsType,
-                 coor_name: str) -> None:
-        super().__init__()
-
-        # import here to avoid loop
-        from launch.utilities import normalize_to_list_of_substitutions
-        self.__frame_name = normalize_to_list_of_substitutions(frame_name)
-        self.__world_name = normalize_to_list_of_substitutions(world_name)
-        self.__model_pose = normalize_to_list_of_substitutions(model_pose)
-        self.__x = '0.0'
-        self.__y = '0.0'
-        self.__z = '0.3'
-        self.__roll = '0.0'
-        self.__pitch = '0.0'
-        self.__yaw = '0.0'
-        self.__coord_name = coor_name
-
-    @property
-    def model_pose(self) -> List[Substitution]:
-        """Getter for model pose."""
-        return self.__model_pose
-
-    @property
-    def frame_name(self) -> List[Substitution]:
-        """Getter for frame name."""
-        return self.__frame_name
-
-    @property
-    def world_name(self) -> List[Substitution]:
-        """Getter for world name."""
-        return self.__world_name
-
-    def parseCoords(self, strCoords: str,
-                    key: Literal['x', 'y', 'z', 'roll', 'pitch', 'yaw'],
-                    strSplit: str):
-        x, y, z, roll, pitch, yaw = strCoords.split(strSplit)
-        if (key == 'x'):
-            return str(x)
-        if (key == 'y'):
-            return str(y)
-        if (key == 'z'):
-            return str(z)
-        if (key == 'roll'):
-            return str(roll)
-        if (key == 'pitch'):
-            return str(pitch)
-        if (key == 'yaw'):
-            return str(yaw)
-        raise Exception('Not able to parse model pose coordinates')
-
-    def perform(self, context: LaunchContext) -> str:
-        frame_name_str = perform_substitutions(context, self.frame_name)
-        world_name_str = perform_substitutions(context, self.world_name)
-        model_pose_str = perform_substitutions(context, self.model_pose)
-
-        # allow manually specified model_pose param to override lookup
-        if model_pose_str != '':
-            return self.parseCoords(model_pose_str, self.__coord_name, ', ')
-
-        if frame_name_str != '':
-            world_sdf_path = os.path.join(
-                get_package_share_directory('vehicle_gateway_worlds'),
-                'worlds',
-                world_name_str + '.sdf')
-            # I couldn't get the libsdformat binding to work as expected due
-            # to various troubles. Let's simplify and just treat SDF as
-            # regular XML and do an XPath query
-            sdf_root = ET.parse(world_sdf_path).getroot()
-            frame_node = sdf_root.find(f".//frame[@name=\'{frame_name_str}\']")
-            if not frame_node:
-                raise ValueError(f'Could not find a frame named {frame_name_str}')
-            pose_node = frame_node.find('pose')
-            pose_str = pose_node.text
-            # SDFormat stores poses space-separated, but we need them comma-separated
-            return self.parseCoords(pose_str, self.__coord_name, ' ')
-
-        # default a bit above the origin; vehicle will drop to the ground plane
-        return self.parseCoords('0, 0, 0.3, 0, 0, 0', self.__coord_name, ', ')
-
-
-def get_model_pose(frame_name, world_name, model_pose):
-    model_pose_x = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='x')
-
-    model_pose_y = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='y')
-
-    model_pose_z = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='z')
-
-    model_pose_roll = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='roll')
-
-    model_pose_pitch = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='pitch')
-
-    model_pose_yaw = WorldPoseFromSdfFrame(
-        frame_name=frame_name,
-        world_name=world_name,
-        model_pose=model_pose,
-        coor_name='yaw')
-    return [model_pose_x, model_pose_y, model_pose_z,
-            model_pose_roll, model_pose_pitch, model_pose_yaw]
-
-
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
     use_sim_time_arg = DeclareLaunchArgument(
@@ -166,25 +39,10 @@ def generate_launch_description():
                                               choices=['true', 'false'],
                                               description='Start ground control station.')
 
-    world_name = LaunchConfiguration('world_name', default='empty_px4_world')
-    world_name_arg = DeclareLaunchArgument('world_name',
-                                           default_value=world_name,
-                                           description='World name (without .sdf)')
-
-    model_pose = LaunchConfiguration('model_pose', default='')
-    model_pose_arg = DeclareLaunchArgument('model_pose',
-                                           default_value=model_pose,
-                                           description='Model pose (x, y, z, roll, pitch, yaw)')
-
-    [model_pose_x, model_pose_y, model_pose_z,
-     model_pose_roll, model_pose_pitch, model_pose_yaw] = get_model_pose(
-        LaunchConfiguration('frame_name'),
-        LaunchConfiguration('world_name'),
-        LaunchConfiguration('model_pose'))
-
     world_pkgs = get_package_share_directory('tucan_simulation')
     gateway_models_dir = get_package_share_directory('tucan_simulation')
 
+    os.environ['PX4_GZ_MODEL_POSE'] =  '0, 0, .2, 0, 0, 0'
     os.environ['GZ_SIM_RESOURCE_PATH'] = ':' + os.path.join(world_pkgs, 'worlds')
     os.environ['GZ_SIM_RESOURCE_PATH'] += ':' + os.path.join(gateway_models_dir, 'models')
 
@@ -192,7 +50,8 @@ def generate_launch_description():
     
     px4_script_path = os.path.join(os.path.dirname(__file__), 'px4.launch.sh')
     microxrce_script_path = os.path.join(os.path.dirname(__file__), 'microxrce.launch.sh')
-
+    gazebo_script_path = os.path.join(os.path.dirname(__file__), 'gazebo.launch.sh')
+    
     px4_process = ExecuteProcess(
         cmd=['/bin/bash', px4_script_path],
         output='screen'
@@ -203,35 +62,10 @@ def generate_launch_description():
         output='screen'
         )
 
-    model_name = ["tucan"]
-
-    model_sdf_filename = [
-        gateway_models_dir,
-        '/tucan',
-        '/model.sdf']
-
-
-    spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
-        arguments=['-file', model_sdf_filename,
-                   '-name', "tucan",
-                   '-allow_renaming', 'true',
-                   '-x', model_pose_x,
-                   '-y', model_pose_y,
-                   '-z', model_pose_z,
-                   '-R', model_pose_roll,
-                   '-P', model_pose_pitch,
-                   '-Y', model_pose_yaw])
-
-    model_name_env_var = SetEnvironmentVariable('PX4_GZ_MODEL_NAME', model_name)
-
-    autostart_env_var = SetEnvironmentVariable(
-        'PX4_SYS_AUTOSTART',
-        'autostart_magic_number')
-
-    os.environ['PX4_GZ_WORLD'] = ""
+    spawn_entity = ExecuteProcess(
+        cmd=['/bin/bash', gazebo_script_path],
+        output='screen'
+        )
 
     p1 = Popen(split("gz topic -l"), stdout=PIPE)
     p2 = Popen(split("grep -m 1 -e '/world/.*/clock'"), stdin=p1.stdout, stdout=PIPE)
@@ -249,11 +83,7 @@ def generate_launch_description():
     ld = LaunchDescription([
         # Launch gazebo environment
         use_sim_time_arg,
-        world_name_arg,
-        model_pose_arg,
         spawn_entity,
-        model_name_env_var,
-        autostart_env_var,
         bridge,
         RegisterEventHandler(
             event_handler=OnProcessExit(
@@ -273,15 +103,5 @@ def generate_launch_description():
         ExecuteProcess(cmd=['QGroundControl.AppImage'],
                        condition=IfCondition(LaunchConfiguration('groundcontrol')))
     ])
-
-    if len(command_output) == 0:
-        ld.add_action(IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [os.path.join(get_package_share_directory('ros_gz_sim'),
-                              'launch', 'gz_sim.launch.py')]),
-            launch_arguments=[('gz_args', [' -r -v 4 ', LaunchConfiguration('world_name'), '.sdf'])]
-        ))
-    else:
-        print('Another gz instance is running, it will only try to spawn the model in gz.')
 
     return ld
