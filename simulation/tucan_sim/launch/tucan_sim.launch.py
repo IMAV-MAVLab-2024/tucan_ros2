@@ -61,12 +61,12 @@ def generate_launch_description():
     
     microxrce_process = ExecuteProcess(
         cmd=['/bin/bash', microxrce_script_path],
-        output='screen'
+        output='log'
         )
 
     spawn_entity = ExecuteProcess(
         cmd=['/bin/bash', gazebo_script_path],
-        output='screen'
+        output='log'
         )
 
     # Bridge
@@ -76,7 +76,7 @@ def generate_launch_description():
         arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/camera@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo'],
-        output='screen'
+        output='log'
     )
 
     # Register the SIGINT handler
@@ -106,7 +106,7 @@ def generate_launch_description():
                        condition=IfCondition(LaunchConfiguration('groundcontrol')),
                        on_exit=ExecuteProcess(
                             cmd=['/bin/bash', kill_qgc_path],
-                            output='screen'
+                            output='log'
                             ))
     ])
 

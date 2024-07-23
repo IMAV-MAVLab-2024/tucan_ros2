@@ -42,7 +42,7 @@ apt-get install ros-humble-ros-gzgarden
 
 2. Build the micro-XRCE agent:
 ```
-cd ~    # or any  otherdirectory you want
+cd ~    # or any  other directory you want
 git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
 cd Micro-XRCE-DDS-Agent
 mkdir build
