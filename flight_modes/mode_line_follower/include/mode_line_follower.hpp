@@ -17,36 +17,25 @@ using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
 
-class OffboardControl : public rclcpp::Node
+class ModeLineFollower : public rclcpp::Node
 {
 public:
-	OffboardControl(std::string px4_namespace);
-
-	void switch_to_offboard_mode();
-	void arm();
-	void disarm();
+	ModeLineFollower(std::string px4_namespace);
 
 private:
 	enum class State{
 		init,
-		offboard_requested,
-		wait_for_stable_offboard_mode,
-		arm_requested,
-		armed
+		flying_forward,
+		flying_backward
 	} state_;
-	uint8_t service_result_;
-	bool service_done_;
+	
 	rclcpp::TimerBase::SharedPtr timer_;
 
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
-	rclcpp::Client<px4_msgs::srv::VehicleCommand>::SharedPtr vehicle_command_client_;
 
-
-	void publish_offboard_control_mode();
-	void publish_trajectory_setpoint();
-	void request_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0);
-	void response_callback(rclcpp::Client<px4_msgs::srv::VehicleCommand>::SharedFuture future);
+	void publish_offboard_velocity_mode();
+	void publish_velocity_setpoint();
 	void timer_callback(void);
 };
 
