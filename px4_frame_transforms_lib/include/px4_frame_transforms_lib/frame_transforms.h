@@ -53,7 +53,7 @@
 #include <geometry_msgs/msg/vector3.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
-namespace px4_ros_com
+namespace px4_frame_transforms_lib
 {
 namespace frame_transforms
 {

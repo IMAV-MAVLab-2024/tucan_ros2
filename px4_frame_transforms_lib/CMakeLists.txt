@@ -28,7 +28,6 @@ find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(rclpy REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -36,10 +35,10 @@ find_package(rclpy REQUIRED)
 include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
 
 set(HEADER_FILES
-    include/px4_frame_transforms_lib/frame_transforms.h
+    include/${PROJECT_NAME}/frame_transforms.h
 )
 
-add_library(px4_frame_transforms_lib
+add_library(${PROJECT_NAME}
   ${HEADER_FILES}
   src/lib/frame_transforms.cpp
 )
@@ -48,11 +47,10 @@ ament_target_dependencies(px4_frame_transforms_lib Eigen3 geometry_msgs sensor_m
 
 ament_export_targets(px4_frame_transforms_lib HAS_LIBRARY_TARGET)
 
-ament_export_include_directories(include)
-ament_export_libraries(px4_frame_transforms_lib)
+ament_export_dependencies(Eigen3 eigen3_cmake_module geometry_msgs sensor_msgs)
 
 # Install header files
-install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include)
+install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
 install(TARGETS px4_frame_transforms_lib
 	EXPORT px4_frame_transforms_lib

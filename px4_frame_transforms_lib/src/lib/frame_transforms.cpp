@@ -42,7 +42,7 @@
 
 #include <assert.h>
 
-namespace px4_ros_com
+namespace px4_frame_transforms_lib
 {
 namespace frame_transforms
 {
