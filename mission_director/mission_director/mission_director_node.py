@@ -10,7 +10,8 @@ class MissionDirector(Node):
         
 
     def process(self):
-        
+        msg = UInt8()
+        msg.data = 0
         
         
 def main(args=None):
