@@ -27,6 +27,7 @@ import subprocess
 # Signal handler for SIGINT
 def sigint_handler(signum, frame):
     subprocess.run(['pgrep -f QGroundControl | xargs kill -9'], shell=True)
+    subprocess.run(['pgrep -f px4 | xargs kill -9'], shell=True)
     #sys.exit(0)
 
 def generate_launch_description():

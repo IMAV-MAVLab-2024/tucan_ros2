@@ -16,6 +16,7 @@ git submodule update --init --recursive
 
 3. Install dependencies using rosdep:
 ```
+sudo apt install libeigen3-dev
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
