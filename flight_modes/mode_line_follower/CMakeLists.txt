@@ -27,7 +27,7 @@ ament_target_dependencies(mode_line_follower rclcpp px4_msgs px4_frame_transform
 install(TARGETS mode_line_follower DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+#install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 
 install(
   DIRECTORY include/

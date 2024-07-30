@@ -26,9 +26,6 @@ add_executable(mode_takeoff src/mode_takeoff.cpp)
 ament_target_dependencies(mode_takeoff rclcpp px4_msgs px4_frame_transforms_lib)
 install(TARGETS mode_takeoff DESTINATION lib/${PROJECT_NAME})
 
-# Install launch files.
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-
 install(
   DIRECTORY include/
   DESTINATION include
