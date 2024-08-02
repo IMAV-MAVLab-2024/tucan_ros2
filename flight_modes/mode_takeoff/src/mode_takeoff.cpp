@@ -120,7 +120,7 @@ void ModeTakeoff::publish_offboard_position_mode()
 void ModeTakeoff::publish_trajectory_setpoint()
 {
 	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, -2.0};
+	msg.position = {0.0, 0.0, -1.0};
 	//msg.yaw = 0; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
