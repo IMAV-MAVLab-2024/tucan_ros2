@@ -8,7 +8,7 @@ include(ExternalProject)
 if(NOT DEFINED SKIP_QGROUNDCONTROL OR NOT ${SKIP_QGROUNDCONTROL})
   if(NOT EXISTS "${CMAKE_BINARY_DIR}/QGroundControl.AppImage")
     file(DOWNLOAD
-      https://d176tv9ibo4jno.cloudfront.net/builds/master/QGroundControl-x86_64.AppImage
+      https://github.com/mavlink/qgroundcontrol/releases/download/v4.2.4/QGroundControl.AppImage
       QGroundControl.AppImage
     )
   endif()
