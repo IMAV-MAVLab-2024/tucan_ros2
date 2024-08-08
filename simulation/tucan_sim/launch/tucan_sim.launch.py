@@ -27,6 +27,7 @@ import subprocess
 # Signal handler for SIGINT
 def sigint_handler(signum, frame):
     subprocess.run(['pgrep -f QGroundControl | xargs kill -9'], shell=True)
+    subprocess.run(['pgrep -f px4 | xargs kill -9'], shell=True)
     #sys.exit(0)
 
 def generate_launch_description():
@@ -52,7 +53,6 @@ def generate_launch_description():
     px4_script_path = os.path.join(os.path.dirname(__file__), 'px4.launch.sh')
     microxrce_script_path = os.path.join(os.path.dirname(__file__), 'microxrce.launch.sh')
     gazebo_script_path = os.path.join(os.path.dirname(__file__), 'gazebo.launch.sh')
-    kill_qgc_path = os.path.join(os.path.dirname(__file__), 'kill_qgc.sh')
     
     px4_process = ExecuteProcess(
         cmd=['/bin/bash', px4_script_path],
@@ -103,11 +103,7 @@ def generate_launch_description():
         microxrce_process,
         use_groundcontrol,
         ExecuteProcess(cmd=['QGroundControl.AppImage'],
-                       condition=IfCondition(LaunchConfiguration('groundcontrol')),
-                       on_exit=ExecuteProcess(
-                            cmd=['/bin/bash', kill_qgc_path],
-                            output='log'
-                            ))
+                       condition=IfCondition(LaunchConfiguration('groundcontrol')))
     ])
 
     return ld

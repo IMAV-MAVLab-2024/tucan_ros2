@@ -28,22 +28,22 @@ colcon build
 
 This assumes ubuntu 22.04, on different ubuntu gz-garden has to be installed separately.
 
-0. Install gz-garden.
+1. Clone our px4 repository in the correct location and build:
 ```
-sudo apt-get update
-sudo apt-get install lsb-release wget gnupg
-sudo wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
-sudo apt-get update
-sudo apt-get install gz-garden
-```
-1. Update gazebo bridge.
-```
-sudo apt remove ros-humble-ros-gz-bridge
-apt-get install ros-humble-ros-gzgarden
+cd ~
+git clone git@github.com:IMAV-MAVLab-2024/PX4-Autopilot.git
+bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
+cd PX4-Autopilot
+make px4_sitl
 ```
 
-2. Build the micro-XRCE agent:
+2. Update gazebo bridge.
+```
+sudo apt remove ros-humble-ros-gz-bridge
+sudo apt-get install ros-humble-ros-gzgarden
+```
+
+3. Build the micro-XRCE agent:
 ```
 cd ~    # or any  other directory you want
 git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
@@ -54,13 +54,6 @@ cmake ..
 make
 sudo make install
 sudo ldconfig /usr/local/lib/
-```
-
-3. Clone our px4 repository in the correct location and build:
-```
-cd ~
-git clone git@github.com:IMAV-MAVLab-2024/PX4-Autopilot.git
-make px4_sitl
 ```
 
 4. Build
