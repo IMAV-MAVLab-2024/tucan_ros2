@@ -1,0 +1,14 @@
+uint8 NO_MODE = 0
+uint8 START = 1
+uint8 FOLLOW_LINE = 2
+uint8 TASK_PHOTOGRAPHY = 3
+uint8 TASK_GATE = 4
+uint8 TASK_LANDING = 5
+uint8 TASK_PICKUP = 6
+uint8 TASK_PLACE = 7
+uint8 TASK_WINDOW = 8
+uint8 TASK_TAKEOFF = 9
+uint8 TASK_FIND_LINE = 10
+
+
+uint8 mode_id
