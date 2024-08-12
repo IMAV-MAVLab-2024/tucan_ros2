@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import UInt8, Bool
+from std_msgs.msg import Bool
 from tucan_msgs.msg import Mode
 
 class MissionDirector(Node):
@@ -18,8 +18,8 @@ class MissionDirector(Node):
         
         self.fm_finish_subscriber = self.create_subscription(Bool,'mode_finished', self.__listener_callback,1)
         
-        self.__state = 'start'
-        self.__state_dict = {'start': 1,            # Initial state
+        self.__state = 'idle'
+        self.__state_dict = {'hover': 1,            # Hover over an ArUco marker
                              'follow_line': 2,      # Follow line until next ArUco marker
                              'task_photography': 3, # Execute wildlife photography task
                              'task_gate': 4,        # Execute gate passing task
@@ -48,7 +48,7 @@ class MissionDirector(Node):
     def __run_state_machine(self):
         # State machine implementation
         match self.__state:
-            case 'start':
+            case 'hover':
                 self.__publish_state()           
                 
                 self.get_logger().info('State: {self.__state}')
