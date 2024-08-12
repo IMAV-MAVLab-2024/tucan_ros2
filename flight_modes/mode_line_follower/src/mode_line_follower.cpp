@@ -43,6 +43,8 @@
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <px4_msgs/srv/vehicle_command.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <std_msgs/msg/u_int8.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 #include <mode_line_follower.hpp>
@@ -54,14 +56,19 @@
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
+using namespace geometry_msgs::msg;
+using namespace std_msgs::msg;
 
+using std::placeholders::_1;
 
 
 ModeLineFollower::ModeLineFollower(std::string px4_namespace) :
 		Node("mode_line_follower"),
 		state_{State::init},
 		offboard_control_mode_publisher_{this->create_publisher<OffboardControlMode>(px4_namespace+"in/offboard_control_mode", 10)},
-		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>(px4_namespace+"in/trajectory_setpoint", 10)}
+		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>(px4_namespace+"in/trajectory_setpoint", 10)},
+		target_subscriber_{this->create_subscription<Point>("target_position_camera_frame", 10, std::bind(&ModeLineFollower::process_msg, this, _1))},
+		md_state_subscriber_{this->create_subscription<UInt8>("mission_state", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
 
@@ -91,19 +98,39 @@ void ModeLineFollower::publish_offboard_velocity_mode()
  */
 void ModeLineFollower::publish_velocity_setpoint()
 {
+	// To get the v
+	target_vel.x = 1.0;
+	target_vel.y = 1.0;
 	TrajectorySetpoint msg{};
-	msg.velocity = {0.3, 0.0, 0.0};
+	msg.velocity = {target_vel.x, target_vel.y, 0.0};
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
 }
 
 void ModeLineFollower::timer_callback(void){
 	
-	static uint8_t num_of_steps = 0;
+	//static uint8_t num_of_steps = 0;
 
 	// offboard_control_mode needs to be paired with trajectory_setpoint
 	publish_offboard_velocity_mode();
 	publish_velocity_setpoint();
+}
+
+void ModeLineFollower::process_state_msg(const UInt8::SharedPtr msg) const
+{
+	if (msg->data == mode_id)
+	{
+		RCLCPP_INFO(this->get_logger(), "Line Follower node active, state %i", mode_id);
+		//execute_line_following();
+	}
+}
+
+void ModeLineFollower::process_msg(const Point::SharedPtr msg)
+{
+	// Get the camera target XY position and set on object to make asynchronous
+	RCLCPP_INFO(this->get_logger(), "Received message '%f'", msg->x);
+	target.x = msg->x;
+	target.y = msg->y;
 }
 
 int main(int argc, char *argv[])
