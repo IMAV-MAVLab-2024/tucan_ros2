@@ -18,7 +18,7 @@ class DriverGripper(Node):
 
     
     def run(self):
-        """Run the camera driver node
+        """Run the gripper driver node
         """
         rate = self.create_rate(self.frequency)
         while rclpy.ok():

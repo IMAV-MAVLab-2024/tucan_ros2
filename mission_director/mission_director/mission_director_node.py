@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import UInt8, Bool
+from tucan_msgs.msg import Mode
 
 class MissionDirector(Node):
     """High-level director state machine
@@ -13,7 +14,7 @@ class MissionDirector(Node):
     """
     def __init__(self):
         super().__init__('mission_director')
-        self.state_publisher = self.create_publisher(UInt8, 'mission_state', 10)
+        self.state_publisher = self.create_publisher(Mode, 'mission_state', 10)
         
         self.fm_finish_subscriber = self.create_subscription(Bool,'mode_finished', self.__listener_callback,1)
         
@@ -27,8 +28,8 @@ class MissionDirector(Node):
                              'task_place': 7,       # Execute place task
                              'task_window': 8,      # Execute window task (implementation determines do or avoid)
                              'task_takeoff': 9,     # Do a takeoff
-                             'find_line': 0,        # Default state if no line is detected or task is active
-                             'idle': 99}            # Do-nothing state
+                             'find_line': 10,        # Default state if no line is detected or task is active
+                             'idle': 0}            # Do-nothing state
 
         self.__next_task = 'task_photography' # Assign what the next task to be executed is
         self.__in_control = True # Boolean stating if the mission director has control
@@ -156,8 +157,8 @@ class MissionDirector(Node):
     def __publish_state(self):
         """Publish the current state to the mission_state topic
         """
-        msg = UInt8()
-        msg.data = self.__state_dict[int(self.__state)]
+        msg = Mode()
+        msg.mode_id = self.__state_dict[int(self.__state)]
         self.state_publisher.publish(msg)
     
     def __listener_callback(self, msg):
@@ -168,7 +169,6 @@ class MissionDirector(Node):
         elif msg.data == 1:
             self.get_logger().info('Control with mission director')
             self.__in_control = True
-        
         
         
         
