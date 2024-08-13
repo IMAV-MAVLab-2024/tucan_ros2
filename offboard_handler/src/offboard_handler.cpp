@@ -42,15 +42,9 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
-#include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 
-#include <chrono>
-#include <iostream>
-
-using namespace std::chrono;
-using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
 
 /**
@@ -62,7 +56,7 @@ OffboardHandler::OffboardHandler() :
         offboard_control_mode_publisher_(this->create_publisher<OffboardControlMode>("/fmu/in/offboard_control_mode", 10)),
 		trajectory_setpoint_publisher_(this->create_publisher<TrajectorySetpoint>("/fmu/in/trajectory_setpoint", 10)),
 		vehicle_command_publisher_(this->create_publisher<VehicleCommand>("/fmu/in/vehicle_command", 10)),
-        command_subscriber_(this->create_subscription<TrajectorySetpoint>("/trajectory_setpoint", 10, std::bind(&OffboardHandler::command_callback, this, std::placeholders::_1)))
+        command_subscriber_(this->create_subscription<TrajectorySetpoint>("/trajectory_setpoint", 10, std::bind(&OffboardHandler::command_callback, this, std::placeholders::_1))),
 		control_mode_subscriber_(this->create_subscription<OffboardControlMode>("/control_mode", 10, std::bind(&OffboardHandler::control_mode_callback, this, std::placeholders::_1)))
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Offboard Handler node");

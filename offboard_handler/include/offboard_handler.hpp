@@ -20,6 +20,7 @@ class OffboardHandler : public rclcpp::Node
         rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
 
         rclcpp::Subscription<TrajectorySetpoint>::SharedPtr command_subscriber_;
+        rclcpp::Subscription<OffboardControlMode>::SharedPtr control_mode_subscriber_;
 
         // Reference trackers
         TrajectorySetpoint setpoint_;
@@ -31,6 +32,7 @@ class OffboardHandler : public rclcpp::Node
 
         void loop_once();
         void command_callback(const TrajectorySetpoint::SharedPtr msg);
+        void control_mode_callback(const OffboardControlMode::SharedPtr msg);
         void publish_offboard_control_mode();
         void publish_trajectory_setpoint();
         void publish_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0);
