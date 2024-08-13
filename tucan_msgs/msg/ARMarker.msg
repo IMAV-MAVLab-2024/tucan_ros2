@@ -1,3 +1,3 @@
 uint8 id
-uint8 x
-uint8 y
+int32 x
+int32 y
