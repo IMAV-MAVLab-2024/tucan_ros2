@@ -2,10 +2,15 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>cv_aruco_detector</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>TODO: Package description</description>
-  <maintainer email="mbrummelhuis@gmail.com">imav2024</maintainer>
+  <maintainer email="Suryansh.Sharma@tudelft.nl">Suryansh Sharma</maintainer>
   <license>TODO: License declaration</license>
+
+  <depend>tucan_msg</depend>
+  <depend>numpy</depend>
+  <depend>cv2</depend>
+  <depend>rclpy</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

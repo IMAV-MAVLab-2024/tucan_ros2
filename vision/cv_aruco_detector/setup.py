@@ -4,7 +4,7 @@ package_name = 'cv_aruco_detector'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='0.0.1',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -13,13 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='imav2024',
-    maintainer_email='mbrummelhuis@gmail.com',
+    maintainer='Suryansh Sharma',
+    maintainer_email='Suryansh.Sharma@tudelft.nl',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "cv_aruco_detector = cv_aruco_detector.cv_aruco_detector:main",
         ],
     },
 )
