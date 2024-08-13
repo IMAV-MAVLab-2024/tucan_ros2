@@ -16,6 +16,7 @@ class ModeHover(Node):
         self.__frequency = 20 # Frequency in Hz
         
         self.is_active = False
+        self.counter = 0
         
         self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
         
@@ -37,6 +38,12 @@ class ModeHover(Node):
         if self.is_active:
             self.publish_trajectory_setpoint()
             self.publish_offboard_position_mode()
+            self.counter += 1
+        
+        # Exit the noden after 1 second of activity
+        if self.counter == self.__frequency*1.0:
+            self.is_active = False
+            self.counter = 0
         
     def publish_mode_status(self):
         msg = ModeStatus()

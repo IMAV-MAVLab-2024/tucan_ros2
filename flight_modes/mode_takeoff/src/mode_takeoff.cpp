@@ -42,20 +42,43 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/srv/vehicle_command.hpp>
+#include <tucan_msgs/msg/mode.hpp>
+#include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "mode_takeoff.hpp"
+#include <mode_takeoff.hpp>
 
+using namespace std::chrono_literals;
+using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
 
 ModeTakeoff::ModeTakeoff() :
 		Node("mode_takeoff"),
+		mode_status_(MODE_INACTIVE),
+		mission_state_subscriber(this->create_subscription<Mode>("/mission_state", 10, std::bind(&ModeTakeoff::mission_state_callback, this, std::placeholders::_1))),
+		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
 		offboard_control_mode_publisher_{this->create_publisher<OffboardControlMode>("/offboard_control_mode", 10)},
 		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Takeoff mode");
 
+	timer_ = this->create_wall_timer(100ms, std::bind(&ModeTakeoff::timer_callback, this));
+
 	takeoff();
+}
+
+/**
+ * @brief Timer callback to publish mode status. If mode is active, calls takeoff once and sets mode to finished.
+ */
+void ModeTakeoff::timer_callback()
+{
+	publish_mode_status();
+
+	if (mode_status_ == MODE_ACTIVE)
+	{
+		takeoff();
+		mode_status_ = MODE_FINISHED;
+	}
 }
 
 /**
@@ -87,6 +110,32 @@ void ModeTakeoff::publish_trajectory_setpoint()
 	//msg.yaw = 0; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
+}
+
+void ModeTakeoff::publish_mode_status()
+{
+	// Publish the current state of the mode
+	ModeStatus msg{};
+	Mode mode{};
+	mode.mode_id = own_mode_id_;
+	msg.mode = mode;
+	msg.mode_status = mode_status_;
+	if (mode_status_ == MODE_ACTIVE)
+	{
+		msg.busy = true;
+	}
+	else
+	{
+		msg.busy = false;
+	}
+}
+
+void ModeTakeoff::mission_state_callback(const Mode::SharedPtr msg)
+{
+	if (msg->mode_id == own_mode_id_)
+	{
+		mode_status_ = MODE_ACTIVE;
+	}
 }
 
 void ModeTakeoff::takeoff(){

@@ -41,9 +41,6 @@
 
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
-#include <px4_msgs/msg/vehicle_control_mode.hpp>
-#include <px4_msgs/srv/vehicle_command.hpp>
-#include <std_msgs/msg/bool.hpp>
 
 #include <tucan_msgs/msg/line_follower.hpp>
 #include <tucan_msgs/msg/ar_marker.hpp>
@@ -51,31 +48,22 @@
 #include <tucan_msgs/msg/mode_status.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <stdint.h>
 #include <mode_line_follower.hpp>
 
-#include <chrono>
-#include <iostream>
-#include <string>
-
-using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
-using namespace geometry_msgs::msg;
-using namespace std_msgs::msg;
 using namespace tucan_msgs::msg;
 
 using std::placeholders::_1;
 
 ModeLineFollower::ModeLineFollower() :
 		Node("mode_line_follower"),
-		state_{State::init},
 		mode_status_{MODE_INACTIVE},
 		setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)},
-		mode_status_publisher_{this->create_publisher<ModeStatus>("mode_status", 10)},
-		line_detector_subscriber_{this->create_subscription<LineFollower>("cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
-		ar_detector_subscriber_{this->create_subscription<ARMarker>("cv_ar_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
-		md_state_subscriber_{this->create_subscription<Mode>("mission_state", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
+		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
+		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
+		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_ar_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
+		md_state_subscriber_{this->create_subscription<Mode>("/mission_state", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
 
@@ -84,8 +72,7 @@ ModeLineFollower::ModeLineFollower() :
 
 void ModeLineFollower::timer_callback(void)
 {
-	
-	publish_state_information();
+	publish_mode_status();
 }
 
 
@@ -100,55 +87,71 @@ void ModeLineFollower::publish_setpoint()
 	msg.velocity = {forward_vel, lateral_vel, 0.0};
 	msg.yaw = yaw_reference; // relative?
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	trajectory_setpoint_publisher_->publish(msg);
+	setpoint_publisher_->publish(msg);
 }
 
-void ModeLineFollower::publish_state_information()
+void ModeLineFollower::publish_mode_status()
 {
 	// Publish the current state of the mode
 	ModeStatus msg{};
-	msg.mode = own_mode_id_;
+	Mode mode{};
+	mode.mode_id = own_mode_id_;
+	msg.mode = mode;
 	msg.mode_status = mode_status_;
-	msg.busy = true;
-}
-
-void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
-{
-	if (msg->mode_id == own_mode_id)
+	if (mode_status_ == MODE_ACTIVE)
 	{
-		active = true;
+		msg.busy = true;
+	}
+	else
+	{
+		msg.busy = false;
 	}
 }
 
+/**
+ * @brief Process the state message. If the published state is this state, set mode to active.
+ */
+void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
+{
+	if (msg->mode_id == own_mode_id_)
+	{
+		mode_status_ = MODE_ACTIVE;
+	}
+}
+
+/**
+ * @brief Process the line message. Set the lateral velocity and yaw reference based on the line detection.
+ */
 void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 {
 	lateral_vel = K_lateral * msg->avg_offset;
 	yaw_reference = K_yaw * msg->angle;
 }
 
-void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg) const
+/**
+ * @brief Process the AR marker message. If the marker is in the center of the image, deactivate the node.
+ */
+void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
-	// If an AR marker is detected, hover above the marker and publish a finish message
-
-
-	// If the AR marker is in the center of the image, deactivate node
-	// TO DO: Tune this value
+	if (msg->x == 0 && msg->y == 0) // No marker detected
+	{
+		deactivate_node();
+	}
 	if(msg->x*msg->x + msg->y*msg->y < 10)
 	{
 		deactivate_node();
 	}
+
 }
 
 void ModeLineFollower::activate_node()
 {
-	active = true;
+	mode_status_ = MODE_ACTIVE;
 }
 
 void ModeLineFollower::deactivate_node()
 {
-	Bool msg{};
-	msg.data = true;
-	mode_finished_publisher_->publish(msg);
+	mode_status_ = MODE_FINISHED;
 }
 
 
@@ -157,7 +160,7 @@ int main(int argc, char *argv[])
 {
 	setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<ModeLineFollower>("/fmu/"));
+	rclcpp::spin(std::make_shared<ModeLineFollower>());
 
 	rclcpp::shutdown();
 	return 0;
