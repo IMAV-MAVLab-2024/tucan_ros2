@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import Bool
-from tucan_msgs.msg import Mode
+from tucan_msgs.msg import Mode, ModeStatus
 
 class MissionDirector(Node):
     """High-level director state machine
@@ -16,7 +16,7 @@ class MissionDirector(Node):
         super().__init__('mission_director')
         self.state_publisher = self.create_publisher(Mode, 'mission_state', 10)
         
-        self.fm_finish_subscriber = self.create_subscription(Bool,'mode_finished', self.__listener_callback,1)
+        self.fm_finish_subscriber = self.create_subscription(ModeStatus,'mode_status', self.__listener_callback,1)
         
         self.__state = 'idle'
         self.__state_dict = {'hover': 1,            # Hover over an ArUco marker
@@ -31,8 +31,8 @@ class MissionDirector(Node):
                              'find_line': 10,        # Default state if no line is detected or task is active
                              'idle': 0}            # Do-nothing state
 
-        self.__next_task = 'task_photography' # Assign what the next task to be executed is
-        self.__in_control = True # Boolean stating if the mission director has control
+        self.__task_queue = ['task_photography'] # Assign what the next task to be executed is
+        self.__in_control = False # Boolean stating if the mission director has control
         
         self.laps = 0 # Counter for how many laps we have flown
         
@@ -48,6 +48,14 @@ class MissionDirector(Node):
     def __run_state_machine(self):
         # State machine implementation
         match self.__state:
+            case 'idle':
+                self.__publish_state()
+                self.get_logger().info('State: {self.__state}')
+                
+                if self.__in_control:
+                    self.__state = 'task_takeoff'
+                    self.__in_control = False
+                    
             case 'hover':
                 self.__publish_state()           
                 
@@ -141,8 +149,8 @@ class MissionDirector(Node):
                 
                 # State transition
                 if self.__in_control:
-                    self.__next_task = 'task_pickup'
-                    self.__state = 'follow_line'
+                    self.__next_task = 'follow_line'
+                    self.__state = 'hover'
                     self.__in_control = False # Reset control flag
                 
             case 'find_line':
@@ -162,15 +170,29 @@ class MissionDirector(Node):
         self.state_publisher.publish(msg)
     
     def __listener_callback(self, msg):
-        if msg.data == 0:
-            self.get_logger().info('Control with flight mode')
-            self.__in_control = False
+        # MODE_ERROR = 0         # Something went wrong
+        # MODE_INACTIVE = 1      # Mode is inactive
+        # MODE_ACTIVE = 2        # Mode is active
+        # MODE_FINISHED = 3      # Mode has finished
+        status = msg.mode_status
+        match status:
+            case 0: # Go to hover in case of error
+                self.get_logger().info('Mode error - control to MD')
+                self.__in_control = True
+                self.__state = 'hover'
             
-        elif msg.data == 1:
-            self.get_logger().info('Control with mission director')
-            self.__in_control = True
-        
-        
+            case 1:
+                self.get_logger().info('Mode inactive - control to MD')
+                self.__in_control = True
+                self.__state = 'hover'
+            
+            case 2:
+                self.get_logger().info('Mode active')
+                self.__in_control = False
+            
+            case 3:
+                self.get_logger().info('Mode finished - control to MD')
+                self.__in_control = True
         
 def main(args=None):
     rclpy.init(args=args)

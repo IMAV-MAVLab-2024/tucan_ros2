@@ -3,50 +3,47 @@
 
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
-#include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <px4_msgs/srv/vehicle_command.hpp>
+#include <tucan_msgs/msg/mode.hpp>
+#include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <stdint.h>
-#include <px4_frame_transforms_lib/frame_transforms.h>
 
-#include <chrono>
-#include <iostream>
-#include <string>
-
-using namespace std::chrono;
-using namespace std::chrono_literals;
+using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
+
+enum mode_status {
+	MODE_ERROR,				// Something went wrong
+	MODE_INACTIVE,			// Mode is inactive
+	MODE_ACTIVE,			// Mode is active
+	MODE_FINISHED			// Mode has finished
+};
 
 class ModeTakeoff : public rclcpp::Node
 {
 public:
-	ModeTakeoff(std::string px4_namespace);
-
-	void switch_to_offboard_mode();
-	void arm();
+	ModeTakeoff();
 
 private:
-	enum class State{
-		init,
-		offboard_requested,
-		wait_for_stable_offboard_mode,
-		arm_requested,
-		armed
-	} state_;
-	uint8_t service_result_;
-	bool service_done_;
+	float altitude_ = 1.0; // Takeoff altitude in meters (positive up)
+
+	mode_status mode_status_;
+
+	uint8_t own_mode_id_ = 9;
+	
 	rclcpp::TimerBase::SharedPtr timer_;
 
+	rclcpp::Subscription<Mode>::SharedPtr mission_state_subscriber;
+	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Client<px4_msgs::srv::VehicleCommand>::SharedPtr vehicle_command_client_;
 
-
+	void timer_callback();
 	void publish_offboard_position_mode();
 	void publish_trajectory_setpoint();
-	void request_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0);
-	void response_callback(rclcpp::Client<px4_msgs::srv::VehicleCommand>::SharedFuture future);
-	void timer_callback(void);
+	void publish_mode_status();
+	void mission_state_callback(const Mode::SharedPtr msg);
+	void takeoff();
 };
 
 #endif
