@@ -12,6 +12,7 @@
 #include <tucan_msgs/msg/line_follower.hpp>
 #include <tucan_msgs/msg/ar_marker.hpp>
 #include <tucan_msgs/msg/mode.hpp>
+#include <tucan_msgs/msg/mode_status.hpp>
 
 #include <chrono>
 #include <iostream>
@@ -24,10 +25,17 @@ using namespace geometry_msgs::msg;
 using namespace std_msgs::msg;
 using namespace tucan_msgs::msg;
 
+enum mode_status {
+	MODE_ERROR,				// Something went wrong
+	MODE_INACTIVE,			// Mode is inactive
+	MODE_ACTIVE,			// Mode is active
+	MODE_FINISHED			// Mode has finished
+};
+
 class ModeLineFollower : public rclcpp::Node
 {
 public:
-	ModeLineFollower(std::string px4_namespace);
+	ModeLineFollower();
 
 private:
 	enum class State{
@@ -36,7 +44,9 @@ private:
 		flying_backward
 	} state_;
 
-	uint8_t own_mode_id = 2;
+	mode_status mode_status_;
+
+	uint8_t own_mode_id_ = 2;
 
 	bool active;
 	float lateral_vel;
@@ -48,16 +58,14 @@ private:
 	
 	rclcpp::TimerBase::SharedPtr timer_;
 
-	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
-	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
-	rclcpp::Publisher<Bool>::SharedPtr mode_finished_publisher_;
+	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr setpoint_publisher_;
+	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 
 	rclcpp::Subscription<LineFollower>::SharedPtr line_detector_subscriber_;
 	rclcpp::Subscription<ARMarker>::SharedPtr ar_detector_subscriber_;
 	rclcpp::Subscription<Mode>::SharedPtr md_state_subscriber_;
 
-	void publish_offboard_velocity_mode();
-	void publish_velocity_setpoint();
+	void publish_setpoint();
 	void publish_state_information();
 	void timer_callback(void);
 	
@@ -66,6 +74,7 @@ private:
 	void process_state_msg(const Mode::SharedPtr);
 
 	void activate_node();
+	void deactivate_node();
 };
 
 #endif

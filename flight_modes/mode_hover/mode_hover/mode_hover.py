@@ -7,7 +7,7 @@ from tucan_msgs import Mode, ModeStatus, ARMarker
 class ModeHover(Node):
     """flight mode to hover above an AR marker.
     Runs a timer that publishes the mode status every 1/frequency seconds and if node is set to active, publishes velocity setpoints.
-    Has a small internal control loop that adjusts the velocity setpoints based on the AR marker position.
+    Has a small internal control loop that adjusts the velocity setpoints based on the AR marker position. If no marker is detected, keeps position.
     """
     def __init__(self):
         super().__init__('mode_hover')
