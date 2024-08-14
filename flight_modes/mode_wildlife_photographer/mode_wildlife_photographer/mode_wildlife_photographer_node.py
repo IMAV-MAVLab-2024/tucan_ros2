@@ -1,19 +1,21 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Bool
-from tucan_msgs.msg import Mode
+from tucan_msgs.msg import Mode, ModeStatus
 
 class ModeWildlifePhotographer(Node):
     """Sample placing mode node.
     """
     def __init__(self):
         super().__init__('mode_wildlife_photographer')
-        self.__own_state = 3
+        self.mode = 3
         self.state_subscriber = self.create_subscription(Mode,'mission_state', self.__listener_callback,1)
-        self.finished_publsher = self.create_publisher(Bool,'mode_finished', 10)
+        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
+        self.is_active = False
         
-        self.frequency = 20 # Node frequency in Hz
+        self.frequency = 1. # Node frequency in Hz
+        
+        self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
         
     def execute(self):
         """Execute the wildlife photographer mode.
@@ -24,15 +26,24 @@ class ModeWildlifePhotographer(Node):
 
         
     def __listener_callback(self, msg):
-        if msg.data == self.__own_state:
-            self.execute()
-            
-            self.__publish_finished()
+        if msg.data == self.mode:
+            self.is_active = True
     
-    def __publish_finished(self):
-        msg = Bool()
-        msg.data = True
-        self.finished_publsher.publish(msg)
+    def timer_callback(self):
+        self.publish_mode_status()
+        if self.is_active:
+            self.is_active = False
+            self.execute()
+        
+    def publish_mode_status(self):
+        msg = ModeStatus()
+        msg.mode.mode_id = self.mode
+        if self.is_active:
+            msg.mode_status = msg.MODE_ACTIVE
+        else:
+            msg.mode_status = msg.MODE_FINISHED
+        msg.busy = self.is_active
+        self.mode_status_publisher_.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)

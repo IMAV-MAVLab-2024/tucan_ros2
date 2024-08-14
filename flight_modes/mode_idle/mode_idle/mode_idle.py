@@ -11,7 +11,7 @@ class ModeIdle(Node):
         super().__init__('mode_idle')
         self.get_logger().info('Idle mode initialized - waiting for arming')
         self.mode = 0 # Idle mode ID is 0
-        self.__frequency = 1 # Frequency in Hz
+        self.__frequency = 1. # Frequency in Hz
         
         self.offboard_enabled = False
         self.armed = False

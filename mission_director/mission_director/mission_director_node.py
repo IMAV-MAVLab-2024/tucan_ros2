@@ -15,9 +15,9 @@ class MissionDirector(Node):
     def __init__(self):
         super().__init__('mission_director')
         self.state_publisher = self.create_publisher(Mode, 'mission_state', 10)
-        
+
         self.fm_finish_subscriber = self.create_subscription(ModeStatus,'mode_status', self.__listener_callback,1)
-        
+
         self.__state = 'idle'
         self.__state_dict = {'hover': 1,            # Hover over an ArUco marker
                              'follow_line': 2,      # Follow line until next ArUco marker
@@ -32,38 +32,43 @@ class MissionDirector(Node):
                              'idle': 0}            # Do-nothing state
 
         self.__task_queue = ['task_photography'] # Assign what the next task to be executed is
+        self.__next_task = 'task_photography' # Assign what the next task to be executed is
         self.__in_control = False # Boolean stating if the mission director has control
-        
+
         self.laps = 0 # Counter for how many laps we have flown
-        
+
         self.frequency = 20 # Node frequency in Hz
-        
+
     def run(self):
-        
+
         rate = self.create_rate(self.frequency)
         while rclpy.ok():
             self.__run_state_machine()
             rate.sleep()
-        
+
     def __run_state_machine(self):
         # State machine implementation
         match self.__state:
             case 'idle':
                 self.__publish_state()
                 self.get_logger().info('State: {self.__state}')
-                
+
                 if self.__in_control:
                     self.__state = 'task_takeoff'
                     self.__in_control = False
-                    
+
             case 'hover':
                 self.__publish_state()           
                 
                 self.get_logger().info('State: {self.__state}')
                 
-                # State transition to takeoff
+                # State transition
                 if self.__in_control:
-                    self.__state = 'task_takeoff'
+                    if self.__from_follow_line:
+                        self.__state = self.__next_task
+                        self.__from_follow_line = False
+                    else:
+                        self.__state = 'follow_line'
                     self.__in_control = False # Reset control flag
 
             case 'follow_line':
@@ -73,7 +78,8 @@ class MissionDirector(Node):
                 
                 # State transition
                 if self.__in_control:
-                    self.__state = self.__next_task
+                    self.__state = 'hover'
+                    self.__from_follow_line = True
                     self.__in_control = False # Reset control flag
 
             case 'task_photography':
@@ -84,7 +90,7 @@ class MissionDirector(Node):
                 # State transition
                 if self.__in_control:
                     self.__next_task = 'task_gate'
-                    self.__state = 'follow_line'
+                    self.__state = 'hover'
                     self.__in_control = False # Reset control flag
                 
             case 'task_gate':
@@ -149,7 +155,6 @@ class MissionDirector(Node):
                 
                 # State transition
                 if self.__in_control:
-                    self.__next_task = 'follow_line'
                     self.__state = 'hover'
                     self.__in_control = False # Reset control flag
                 
