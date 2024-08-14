@@ -3,6 +3,8 @@
 import numpy as np
 import cv2
 import math
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
 #ROS2
 import rclpy
 from rclpy.node import Node
@@ -15,15 +17,14 @@ y_direction = [0] * N_SLICES
 yaw_angle = [0] * N_SLICES
 # angle wrt y axis (forward is y axis)
 fps = 15.
-frame_width = 800
-frame_height = 600
 
 class LineDetector(Node):
     def __init__(self):
         super().__init__("cv_line_detector")
         self.get_logger().info("CV Line detection Node has been started")
         self.yaw_offset_publisher = self.create_publisher(LineFollower, "cv_line_detection",int(fps))
-        self.ImageLoop()
+        self.bridge_for_CV = CvBridge()
+        self.subscription = self.create_subscription(Image, "laptop_camera_image", self.ImageLoop, int(fps))
 
     def RemoveBackground(self,image):
         up = 200
@@ -137,44 +138,26 @@ class LineDetector(Node):
             cv2.putText(img,str(middleX-contourCenterX),(contourCenterX+20, middleY), font, 1,(200,0,200),2,cv2.LINE_AA)
             cv2.putText(img,"Weight:%.3f"%self.getContourExtent(MainContour),(contourCenterX+20, middleY+35), font, 0.5,(200,0,200),1,cv2.LINE_AA)						
 
-    def ImageLoop(self):
+    def ImageLoop(self,data):
         msg = LineFollower()
-
-        # starting video streaming
-        cv2.namedWindow('down_frame')
-
-        # Create capture
-        video_capture = cv2.VideoCapture(0)
-        # Set camera properties
-        # video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
-        # video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
-        # video_capture.set(cv2.CAP_PROP_FPS, fps)
-
-        while True:
-            img = video_capture.read()[1]
-            img = self.RemoveBackground(img)
-            final_offset = 0
-            final_yaw_angle = 0
-            self.SlicePart(img, Images, N_SLICES)
-            for i in range(len(yaw_angle)):
-                if i == N_SLICES-1:
-                    yaw_angle[i] = self.GetAngle(x_direction[0], y_direction[0], x_direction[i], y_direction[i])
-                else:
-                    yaw_angle[i] = self.GetAngle(x_direction[i], y_direction[i], x_direction[i+1], y_direction[i+1])
-            for i in range(len(x_direction)):
-                final_offset += x_direction[i]
-                final_yaw_angle += yaw_angle[i]
-            #Process(img)						
-            msg.avg_offset = final_offset/N_SLICES
-            msg.angle = final_yaw_angle/N_SLICES
-            self.yaw_offset_publisher.publish(msg)
-            self.get_logger().info("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
-            cv2.imshow("window_frame", img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        # Clean up the connection
-        cv2.destroyAllWindows()
+        img = self.bridge_for_CV.imgmsg_to_cv2(data)
+        img = self.RemoveBackground(img)
+        final_offset = 0
+        final_yaw_angle = 0
+        self.SlicePart(img, Images, N_SLICES)
+        for i in range(len(yaw_angle)):
+            if i == N_SLICES-1:
+                yaw_angle[i] = self.GetAngle(x_direction[0], y_direction[0], x_direction[i], y_direction[i])
+            else:
+                yaw_angle[i] = self.GetAngle(x_direction[i], y_direction[i], x_direction[i+1], y_direction[i+1])
+        for i in range(len(x_direction)):
+            final_offset += x_direction[i]
+            final_yaw_angle += yaw_angle[i]
+        #Process(img)						
+        msg.avg_offset = final_offset/N_SLICES
+        msg.angle = final_yaw_angle/N_SLICES
+        self.yaw_offset_publisher.publish(msg)
+        self.get_logger().info("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
 
 def main():
     rclpy.init()
@@ -184,6 +167,8 @@ def main():
         rclpy.spin(line_detector_node)
     except KeyboardInterrupt:
          print("Shutting Down") 
+    # Clean up the connection
+    cv2.destroyAllWindows()
     rclpy.shutdown()
 
 if __name__ == '__main__':

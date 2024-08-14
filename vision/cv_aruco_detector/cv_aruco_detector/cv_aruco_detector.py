@@ -2,6 +2,8 @@
 #OPENCV
 import numpy as np
 import cv2
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
 # import imutils
 #ROS2
 import rclpy
@@ -10,8 +12,6 @@ from tucan_msgs.msg import ARMarker
 
 Images=[]
 fps = 15.
-frame_width = 800
-frame_height = 600
 
 # define names of each possible ArUco tag OpenCV supports
 ARUCO_DICT = {
@@ -26,7 +26,8 @@ class MarkerDetector(Node):
         super().__init__("cv_aruco_detector")
         self.get_logger().info("CV AR detection Node has been started")
         self.yaw_offset_publisher = self.create_publisher(ARMarker, "cv_aruco_detector", int(fps))
-        self.ImageLoop()
+        self.bridge_for_CV = CvBridge()
+        self.subscription = self.create_subscription(Image, "laptop_camera_image", self.ImageLoop, int(fps))
 
     def RemoveBackground(self,image):
         up = 100
@@ -41,93 +42,78 @@ class MarkerDetector(Node):
         image = (255-image)
         return image
 
-    def ImageLoop(self):
+    def ImageLoop(self,data):
         msg = ARMarker()
-
-        # starting video streaming
-        cv2.namedWindow('down_frame')
-
-        # Create capture
-        video_capture = cv2.VideoCapture(0)
-        # Set camera properties
-        # video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
-        # video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
-        # video_capture.set(cv2.CAP_PROP_FPS, fps)
-
+        # grab the frame from the threaded video stream and resize it
+        # to have a maximum width of 600 pixels
+        # img = imutils.resize(img, width=1000)
+        img = self.bridge_for_CV.imgmsg_to_cv2(data)
         arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT["DICT_5X5_1000"])
         arucoParams = cv2.aruco.DetectorParameters_create()
 
-        while True:
-            img = video_capture.read()[1]
-            # grab the frame from the threaded video stream and resize it
-            # to have a maximum width of 600 pixels
-            # img = imutils.resize(img, width=1000)
+        # detect ArUco markers in the input frame
+        (corners, ids, rejected) = cv2.aruco.detectMarkers(img, arucoDict, parameters=arucoParams)
 
-            # img = self.RemoveBackground(img)
-            # self.ProcessFrame(img)
+        # verify *at least* one ArUco marker was detected
+        if len(corners) > 0:
+            # flatten the ArUco IDs list
+            ids = ids.flatten()
 
-            # detect ArUco markers in the input frame
-            (corners, ids, rejected) = cv2.aruco.detectMarkers(img, arucoDict, parameters=arucoParams)
+            # loop over the detected ArUCo corners
+            for (markerCorner, markerID) in zip(corners, ids):
+                # extract the marker corners (which are always returned
+                # in top-left, top-right, bottom-right, and bottom-left
+                # order)
+                corners = markerCorner.reshape((4, 2))
+                (topLeft, topRight, bottomRight, bottomLeft) = corners
 
-            # verify *at least* one ArUco marker was detected
-            if len(corners) > 0:
-                # flatten the ArUco IDs list
-                ids = ids.flatten()
+                # convert each of the (x, y)-coordinate pairs to integers
+                topRight = (int(topRight[0]), int(topRight[1]))
+                bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+                bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+                topLeft = (int(topLeft[0]), int(topLeft[1]))
 
-                # loop over the detected ArUCo corners
-                for (markerCorner, markerID) in zip(corners, ids):
-                    # extract the marker corners (which are always returned
-                    # in top-left, top-right, bottom-right, and bottom-left
-                    # order)
-                    corners = markerCorner.reshape((4, 2))
-                    (topLeft, topRight, bottomRight, bottomLeft) = corners
+                # draw the bounding box of the ArUCo detection
+                cv2.line(img, topLeft, topRight, (0, 255, 0), 2)
+                cv2.line(img, topRight, bottomRight, (0, 255, 0), 2)
+                cv2.line(img, bottomRight, bottomLeft, (0, 255, 0), 2)
+                cv2.line(img, bottomLeft, topLeft, (0, 255, 0), 2)
 
-                    # convert each of the (x, y)-coordinate pairs to integers
-                    topRight = (int(topRight[0]), int(topRight[1]))
-                    bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-                    bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-                    topLeft = (int(topLeft[0]), int(topLeft[1]))
+                # compute and draw the center (x, y)-coordinates of the
+                # ArUco marker
+                cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+                cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+                cv2.circle(img, (cX, cY), 4, (0, 0, 255), -1)
 
-                    # draw the bounding box of the ArUCo detection
-                    cv2.line(img, topLeft, topRight, (0, 255, 0), 2)
-                    cv2.line(img, topRight, bottomRight, (0, 255, 0), 2)
-                    cv2.line(img, bottomRight, bottomLeft, (0, 255, 0), 2)
-                    cv2.line(img, bottomLeft, topLeft, (0, 255, 0), 2)
+                height, width  = img.shape[:2]
 
-                    # compute and draw the center (x, y)-coordinates of the
-                    # ArUco marker
-                    cX = int((topLeft[0] + bottomRight[0]) / 2.0)
-                    cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-                    cv2.circle(img, (cX, cY), 4, (0, 0, 255), -1)
+                #Get X coordenate of the middle point
+                middleX = int(width/2)
+                #Get Y coordenate of the middle point 
+                middleY = int(height/2) 
 
-                    height, width  = img.shape[:2]
+                #Draw middle circle RED
+                cv2.circle(img, (middleX, middleY), 3, (0,0,255), -1) 
 
-                    #Get X coordenate of the middle point
-                    middleX = int(width/2)
-                    #Get Y coordenate of the middle point 
-                    middleY = int(height/2) 
+                # draw the ArUco marker ID on the frame
+                cv2.putText(img, str(markerID),
+                    (topLeft[0], topLeft[1] - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5, (0, 255, 0), 2)
 
-                    #Draw middle circle RED
-                    cv2.circle(img, (middleX, middleY), 3, (0,0,255), -1) 
+                msg.id = int(markerID)
+                msg.x = int(cX-middleX)
+                msg.y = int(cY-middleY)                    
+        else:
+            msg.id = 0
+            msg.x = 0
+            msg.y = 0
+        self.yaw_offset_publisher.publish(msg)
+        self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
 
-                    # draw the ArUco marker ID on the frame
-                    cv2.putText(img, str(markerID),
-                        (topLeft[0], topLeft[1] - 15),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, (0, 255, 0), 2)
-
-                    msg.id = int(markerID)
-                    msg.x = int(cX-middleX)
-                    msg.y = int(cY-middleY)                    
-                    self.yaw_offset_publisher.publish(msg)
-                    self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
-
-            cv2.imshow("window_frame", img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        # Clean up the connection
-        cv2.destroyAllWindows()
+        # cv2.imshow("window_frame", img)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     return
 
 def main():
     rclpy.init()
@@ -138,6 +124,8 @@ def main():
     except KeyboardInterrupt:
          print("Shutting Down") 
     rclpy.shutdown()
+    # Clean up the connection
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()

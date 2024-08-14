@@ -1,46 +1,61 @@
 import rclpy
 from rclpy.node import Node
-
+import cv2 
+from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
-
 class DriverCamera(Node):
-    """Camera driver node
-    """
+    """Camera driver node"""
     def __init__(self):
-        super.__init__('driver_camera')
-        self.front_image_publisher = self.create_publisher(Image, 'front_camera_image', 1)
-        self.down_image_publisher = self.create_publisher(Image, 'down_camera_image', 1)
-        
-        
-        # Settings
-        self.frequency = 20
-    
-    def run(self):
-        """Run the camera driver node
-        """
-        rate = self.create_rate(self.frequency)
-        while rclpy.ok():
-            self.__get_camera_images()
-            rate.sleep()
+        super().__init__('camera_driver_node')
+        # Default for laptop testing
+        self.declare_parameter('camera_type', 'laptop')
+        which_camera = self.get_parameter('camera_type').get_parameter_value().string_value
+        # print(which_camera)
 
-    def __get_camera_images(self):
-        
-        # Get front camera image
-        # Publish front camera image
-        
-        # Get down camera image
-        # Publish down camera image
-        pass
-        
-def main(args=None):
-    rclpy.init(args=args)
+        # Settings
+        self.FPS= 15
+        self.frame_width = 800
+        self.frame_height = 600
+
+        if which_camera == 'front':
+            self.cap = cv2.VideoCapture(31)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+            self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
+            self.image_publisher = self.create_publisher(Image, 'front_camera_image', self.FPS)
+        elif which_camera == 'down':  
+            self.cap = cv2.VideoCapture(22)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+            self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
+            self.image_publisher = self.create_publisher(Image, 'down_camera_image', self.FPS)
+        else:
+            self.cap = cv2.VideoCapture(0)
+            self.image_publisher = self.create_publisher(Image, 'laptop_camera_image', self.FPS)
+        self.bridge_for_CV = CvBridge()
+
+        self.timer = self.create_timer(1/self.FPS, self.get_camera_images)
+    
+    def get_camera_images(self):
+        # Get camera image
+        ret, frame = self.cap.read()     
+        if ret == True:
+            # Publish camera image
+            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame))
+            # encoding="passthrough"
+        self.get_logger().info('Publishing video frame')
+            
+def main():
+    rclpy.init()
     camera_driver_node = DriverCamera()
 
     try:
-        camera_driver_node.run()
+        rclpy.spin(camera_driver_node)
     except KeyboardInterrupt:
-        pass
+         print("Shutting Down") 
+    rclpy.shutdown()
+
     
     camera_driver_node.destroy_node()
     rclpy.shutdown()
