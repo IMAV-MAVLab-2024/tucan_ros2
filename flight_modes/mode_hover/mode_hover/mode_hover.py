@@ -19,6 +19,7 @@ class ModeHover(Node):
         self.counter = 0
         
         self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
+        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
         
         self.setpoint_publisher_ = self.create_publisher(TrajectorySetpoint, "/trajectory_setpoint", 10)
         self.control_mode_publisher = self.create_publisher(OffboardControlMode, "/offboard_control_mode", 10)
