@@ -21,7 +21,7 @@ class ModeHover(Node):
         self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
         
         self.setpoint_publisher_ = self.create_publisher(TrajectorySetpoint, "/trajectory_setpoint", 10)
-        self.control_mode_publisher_ = self.create_publisher(OffboardControlMode, "/offboard_control_mode", 10)
+        self.control_mode_publisher = self.create_publisher(OffboardControlMode, "/offboard_control_mode", 10)
         
         self.AR_subsciber_ = self.create_subscription(ARMarker, "/cv_ar_detection", self.AR_callback, 10)
         
@@ -29,6 +29,12 @@ class ModeHover(Node):
         
         self.AR_x_offset = 0.
         self.AR_y_offset = 0.
+        
+        # settings
+        self.forward_velocity_gain = 0.5
+        self.sideways_velocity_gain = 0.5
+        self.x_px = 800
+        self.y_px = 600
         
     def timer_callback(self):
         """Timer callback executes every 1/frequency seconds
@@ -75,7 +81,7 @@ class ModeHover(Node):
         sideways_velocity = self.sideways_velocity_gain * self.AR_y_offset
         msg.velocity = {forward_velocity, sideways_velocity, 0.0}
         msg.yaw = 0.0
-        self.publisher_.publish(msg)
+        self.setpoint_publisher_.publish(msg)
     
     def publish_offboard_position_mode(self):
         msg = OffboardControlMode()
@@ -84,7 +90,7 @@ class ModeHover(Node):
         msg.acceleration = False
         msg.attitude = False
         msg.body_rate = False
-        self.offboard_control_mode_publisher_.publish(msg)
+        self.control_mode_publisher.publish(msg)
         
 def main(args=None):
     rclpy.init(args=args)
