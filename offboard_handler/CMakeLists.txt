@@ -10,17 +10,25 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(px4_frame_transforms_lib REQUIRED)
+find_package(tucan_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
 include_directories(include)
 
+# offboard_handler
 add_executable(offboard_handler src/offboard_handler.cpp)
-ament_target_dependencies(offboard_handler rclcpp px4_msgs)
+ament_target_dependencies(offboard_handler rclcpp px4_msgs px4_frame_transforms_lib tucan_msgs)
 install(TARGETS offboard_handler DESTINATION lib/${PROJECT_NAME})
+
+# Install launch files.
+#install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 
 install(
   DIRECTORY include/

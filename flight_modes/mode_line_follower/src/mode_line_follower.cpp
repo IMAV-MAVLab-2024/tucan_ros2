@@ -133,7 +133,7 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
  */
 void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
-	if (msg->x == 0 && msg->y == 0) // No marker detected
+	if (msg->id == 0) // No marker detected
 	{
 		deactivate_node();
 	}
