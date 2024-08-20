@@ -57,8 +57,8 @@ class ModePrecisionLanding(Node):
             self.is_active = True
     
     def timer_callback(self):
-        self.publish_mode_status()
         if self.is_active:
+            self.publish_mode_status()
             self.execute()
         
     def publish_mode_status(self):

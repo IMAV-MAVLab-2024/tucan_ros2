@@ -70,10 +70,11 @@ ModeTakeoff::ModeTakeoff() :
  */
 void ModeTakeoff::timer_callback()
 {
-	publish_mode_status();
 
 	if (mode_status_ == MODE_ACTIVE)
 	{
+		RCLCPP_INFO(this->get_logger(), "Taking off");
+		publish_mode_status();
 		takeoff();
 		counter++;
 		if (counter > 20)

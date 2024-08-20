@@ -72,7 +72,10 @@ ModeLineFollower::ModeLineFollower() :
 
 void ModeLineFollower::timer_callback(void)
 {
-	publish_mode_status();
+	if (mode_status_==MODE_ACTIVE)
+	{
+		publish_mode_status();
+	}
 }
 
 
@@ -133,10 +136,6 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
  */
 void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
-	if (msg->id == 0) // No marker detected
-	{
-		deactivate_node();
-	}
 	if(msg->x*msg->x + msg->y*msg->y < 10)
 	{
 		deactivate_node();

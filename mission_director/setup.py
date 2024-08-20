@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "mission_director = mission_director.mission_director:main",
+            "mission_director_simple = mission_director.mission_director_simple:main"
         ],
     },
 )

@@ -48,11 +48,8 @@ class MissionDirector(Node):
             case 'idle':
                 self.__publish_state()
                 self.get_logger().info(f'State: {self.__state}')
-
-                self.__in_control = True
-                
+             
                 if self.__in_control:
-                    self.get_logger().info('switching to takeoff')
                     self.__state = 'task_takeoff'
                     self.__in_control = False
 
@@ -149,7 +146,6 @@ class MissionDirector(Node):
                 
             case 'task_takeoff':
                 self.__publish_state()
-                
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition

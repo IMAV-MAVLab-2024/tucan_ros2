@@ -38,14 +38,11 @@ class MissionDirector(Node):
 
         self.laps = 0 # Counter for how many laps we have flown
 
-        self.frequency = 20 # Node frequency in Hz
+        self.__frequency = 1. # Node frequency in Hz
+        self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
 
-    def run(self):
-
-        rate = self.create_rate(self.frequency)
-        while rclpy.ok():
-            self.__run_state_machine()
-            rate.sleep()
+    def timer_callback(self):
+        self.__run_state_machine()
 
     def __run_state_machine(self):
         # State machine implementation
@@ -183,17 +180,14 @@ class MissionDirector(Node):
         status = msg.mode_status
         match status:
             case 0: # Go to hover in case of error
-                self.get_logger().info('Mode error - control to MD')
                 self.__in_control = True
                 self.__state = 'hover'
             
             case 1:
-                self.get_logger().info('Mode inactive - control to MD')
                 self.__in_control = True
                 self.__state = 'hover'
             
             case 2:
-                self.get_logger().info('Mode active')
                 self.__in_control = False
             
             case 3:
@@ -204,10 +198,7 @@ def main(args=None):
     rclpy.init(args=args)
     mission_director = MissionDirector()
 
-    try:
-        mission_director.run()
-    except KeyboardInterrupt:
-        pass
+    rclpy.spin(mission_director)
     
     mission_director.destroy_node()
     rclpy.shutdown()

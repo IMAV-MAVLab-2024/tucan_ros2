@@ -53,7 +53,7 @@ def generate_launch_description():
     # Mission director - simple experiment edition
     mission_director = Node(
         package='mission_director',
-        executable='mission_director',
+        executable='mission_director_simple',
     )
     
     # Offboard handler

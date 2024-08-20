@@ -41,8 +41,9 @@ class ModeHover(Node):
         """Timer callback executes every 1/frequency seconds
         Publishes node status and if node is set active, publishes trajectory setpoints and velocity control mode
         """
-        self.publish_mode_status()
+
         if self.is_active:
+            self.publish_mode_status()
             self.publish_trajectory_setpoint()
             self.publish_offboard_position_mode()
             self.counter += 1
@@ -80,7 +81,7 @@ class ModeHover(Node):
         msg = TrajectorySetpoint()
         forward_velocity = self.forward_velocity_gain * self.AR_x_offset
         sideways_velocity = self.sideways_velocity_gain * self.AR_y_offset
-        msg.velocity = {forward_velocity, sideways_velocity, 0.0}
+        msg.velocity = [float(forward_velocity), float(sideways_velocity), float(0.0)]
         msg.yaw = 0.0
         self.setpoint_publisher_.publish(msg)
     
