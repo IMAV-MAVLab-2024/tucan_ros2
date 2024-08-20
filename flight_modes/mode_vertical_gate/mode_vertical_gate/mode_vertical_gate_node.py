@@ -39,7 +39,7 @@ class ModeVerticalGate(Node):
         # Task implementation
         
     def __listener_callback(self, msg):
-        if msg.data == self.mode:
+        if msg.mode_id == self.mode:
             self.get_logger().info('Executing vertical gate mode')
             self.is_active = True
     

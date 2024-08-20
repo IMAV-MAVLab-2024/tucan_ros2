@@ -28,7 +28,7 @@ class ModePlaceSample(Node):
         # 
         
     def __listener_callback(self, msg):
-        if msg.data == self.mode:
+        if msg.mode_id == self.mode:
             self.is_active = True
     
     def timer_callback(self):

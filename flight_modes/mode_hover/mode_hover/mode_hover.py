@@ -1,8 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
-from px4_msgs import TrajectorySetpoint, OffboardControlMode
-from tucan_msgs import Mode, ModeStatus, ARMarker
+from px4_msgs.msg import TrajectorySetpoint, OffboardControlMode
+from tucan_msgs.msg import ModeStatus, Mode, ARMarker
 
 class ModeHover(Node):
     """flight mode to hover above an AR marker.
@@ -54,7 +54,7 @@ class ModeHover(Node):
         
     def publish_mode_status(self):
         msg = ModeStatus()
-        msg.mode = self.mode
+        msg.mode.mode_id = self.mode
         if self.is_active:
             msg.mode_status = msg.MODE_ACTIVE
         else:
@@ -64,7 +64,7 @@ class ModeHover(Node):
         
     def state_callback(self, msg):
         # Activate node if mission state is idle
-        if msg.mode == self.mode:
+        if msg.mode_id == self.mode:
             self.is_active = True
         
     def AR_callback(self, msg):

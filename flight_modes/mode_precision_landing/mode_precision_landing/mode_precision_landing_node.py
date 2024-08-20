@@ -10,15 +10,15 @@ class ModePrecisionLanding(Node):
     def __init__(self):
         super().__init__('mode_precision_landing')
         self.mode = 5 # Precision landing mode ID is 5, DON'T CHANGE
-        self.state_subscriber = self.create_subscription(Mode,'mission_state', self.__listener_callback,1)
-        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
+        self.state_subscriber = self.create_subscription(Mode,'/mission_state', self.__listener_callback,1)
+        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
         self.is_active = False
         
         self.frequency = 1. # Node frequency in Hz
         
         self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
         
-        self.ar_subscriber = self.create_subscription(ARMarker, 'cv_aruco_detector', self.__ar_callback, 10)
+        self.ar_subscriber = self.create_subscription(ARMarker, '/cv_aruco_detector', self.__ar_callback, 10)
         self.setpoint_publisher = self.create_publisher(TrajectorySetpoint, '/trajectory_setpoint', 10)
         self.control_mode_publisher = self.create_publisher(OffboardControlMode, '/control_mode', 10)
         self.__landing_speed = -0.5 # m/s, downward vertical speed
@@ -52,7 +52,7 @@ class ModePrecisionLanding(Node):
             self.AR_y_offset = 0.
         
     def __listener_callback(self, msg):
-        if msg.data == self.mode:
+        if msg.mode_id == self.mode:
             self.is_active = True
     
     def timer_callback(self):

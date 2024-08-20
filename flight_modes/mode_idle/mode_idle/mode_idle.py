@@ -1,8 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
-from px4_msgs import VehicleStatus
-from tucan_msgs import Mode, ModeStatus
+from px4_msgs.msg import VehicleStatus
+from tucan_msgs.msg import Mode, ModeStatus
 
 class ModeIdle(Node):
     """flight mode that waits for arming and setting to offboard mode. Listens to the vehicle status topic and set itself to MODE_FINISHED when
@@ -27,7 +27,7 @@ class ModeIdle(Node):
         
     def state_callback(self, msg):
         # Activate node if mission state is idle
-        if msg.mode == self.mode:
+        if msg.mode_id == self.mode:
             self.is_active = True
         
     def vehicle_status_callback(self, msg):
@@ -54,7 +54,7 @@ class ModeIdle(Node):
     
     def publish_mode_status(self):
         msg = ModeStatus()
-        msg.mode = self.mode
+        msg.mode.mode_id = self.mode
         if self.is_active:
             msg.mode_status = msg.MODE_ACTIVE
         else:
