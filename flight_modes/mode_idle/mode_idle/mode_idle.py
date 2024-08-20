@@ -5,7 +5,8 @@ from px4_msgs import VehicleStatus
 from tucan_msgs import Mode, ModeStatus
 
 class ModeIdle(Node):
-    """flight mode that waits for arming and setting to offboard mode
+    """flight mode that waits for arming and setting to offboard mode. Listens to the vehicle status topic and set itself to MODE_FINISHED when
+    armed and in offboard mode.
     """
     def __init__(self):
         super().__init__('mode_idle')
@@ -17,8 +18,8 @@ class ModeIdle(Node):
         self.armed = False
         self.is_active = False
         
-        self.state_subscriber_ = self.create_subscription(Mode, "mission_state", self.state_callback, 10)
-        self.armed_subscriber_ = self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status", self.armed_callback, 10)
+        self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
+        self.armed_subscriber_ = self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status", self.vehicle_status_callback, 10)
         
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
         
@@ -29,25 +30,18 @@ class ModeIdle(Node):
         if msg.mode == self.mode:
             self.is_active = True
         
-    def armed_callback(self, msg):
+    def vehicle_status_callback(self, msg):
         # If vehicle is armed, deactivate node and hand back control to mission director
         if msg.arming_state == msg.ARMING_STATE_ARMED:
             self.get_logger().info('Vehicle armed')
             self.armed = True
             self.publish_mode_status()
-        else:
-            self.get_logger().info('Vehicle not armed')
-            self.armed = False
-            self.publish_mode_status()
-    
-    def offboard_callback(self,msg):
-        if msg.nav_state == msg.NAVIGATION_STATE_OFFBOARD:
+        elif msg.nav_state == msg.NAVIGATION_STATE_OFFBOARD:
             self.get_logger().info('Vehicle in offboard mode')
             self.offboard_enabled = True
             self.publish_mode_status()
         else:
-            self.get_logger().info('Vehicle not in offboard mode')
-            self.offboard_enabled = False
+            self.get_logger().info('Vehicle not armed or in offboard mode')
             self.publish_mode_status()
     
     def timer_callback(self):

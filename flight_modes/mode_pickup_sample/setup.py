@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "mode_pickup_sample = mode_pickup_sample.mode_pickup_sample:main",
         ],
     },
 )

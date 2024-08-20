@@ -30,6 +30,7 @@ public:
 private:
 	mode_status mode_status_;
 
+	// Line Follow mode ID is 2, DON'T CHANGE
 	uint8_t own_mode_id_ = 2;
 
 	const float forward_vel = 1.0;

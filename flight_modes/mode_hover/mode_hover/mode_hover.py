@@ -12,7 +12,7 @@ class ModeHover(Node):
     def __init__(self):
         super().__init__('mode_hover')
         self.get_logger().info('ModeHover initialized')
-        self.mode = 1 # Idle mode ID is 0
+        self.mode = 1 # Hover mode ID is 1, DON'T CHANGE
         self.__frequency = 20 # Frequency in Hz
         
         self.is_active = False

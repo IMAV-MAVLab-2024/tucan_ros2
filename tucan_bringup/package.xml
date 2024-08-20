@@ -9,7 +9,21 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- Packages called in launch files -->
+  <exec_depend>mission_director</exec_depend>
+  <exec_depend>offboard_handler</exec_depend>
+  <!-- Vision -->
   <exec_depend>cv_aruco_detector</exec_depend>
+
+  <!-- Flight modes -->
+  <exec_depend>mode_idle</exec_depend>
+  <exec_depend>mode_hover</exec_depend>
+  <exec_depend>mode_takeoff</exec_depend>
+  <exec_depend>mode_line_follower</exec_depend>
+  <exec_depend>mode_precision_landing</exec_depend>
+
+  <!-- Drivers -->
+  <exec_depend>driver_camera</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
