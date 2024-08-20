@@ -57,6 +57,21 @@ class ModeVerticalGate(Node):
             msg.mode_status = msg.MODE_FINISHED
         msg.busy = self.is_active
         self.mode_status_publisher_.publish(msg)
+    
+    def publish_trajectory_setpoint(self):
+        msg = TrajectorySetpoint()
+        msg.position = {0., 0., self.target_altitude}
+        msg.yaw = 0.0
+        self.setpoint_publisher.publish(msg)
+    
+    def publish_offboard_position_mode(self):
+        msg = OffboardControlMode()
+        msg.position = True
+        msg.velocity = False
+        msg.acceleration = False
+        msg.attitude = False
+        msg.body_rate = False
+        self.control_mode_publisher.publish(msg)
         
 def main(args=None):
     rclpy.init(args=args)

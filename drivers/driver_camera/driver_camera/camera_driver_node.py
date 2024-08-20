@@ -44,7 +44,7 @@ class DriverCamera(Node):
             # Publish camera image
             self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame))
             # encoding="passthrough"
-        self.get_logger().info('Publishing video frame')
+        self.get_logger().debug('Publishing video frame')
             
 def main():
     rclpy.init()

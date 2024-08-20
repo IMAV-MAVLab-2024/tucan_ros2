@@ -28,6 +28,8 @@ private:
 
 	mode_status mode_status_;
 
+	int counter = 0;
+
 	uint8_t own_mode_id_ = 9; // Takeoff mode ID is 9, DON'T CHANGE
 	
 	rclcpp::TimerBase::SharedPtr timer_;

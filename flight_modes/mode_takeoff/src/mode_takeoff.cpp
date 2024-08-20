@@ -63,8 +63,6 @@ ModeTakeoff::ModeTakeoff() :
 	RCLCPP_INFO(this->get_logger(), "Starting Takeoff mode");
 
 	timer_ = this->create_wall_timer(100ms, std::bind(&ModeTakeoff::timer_callback, this));
-
-	takeoff();
 }
 
 /**
@@ -77,7 +75,12 @@ void ModeTakeoff::timer_callback()
 	if (mode_status_ == MODE_ACTIVE)
 	{
 		takeoff();
-		mode_status_ = MODE_FINISHED;
+		counter++;
+		if (counter > 20)
+		{
+			mode_status_ = MODE_FINISHED;
+			counter = 0;
+		}
 	}
 }
 
