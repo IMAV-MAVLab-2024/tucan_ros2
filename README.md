@@ -66,3 +66,15 @@ colcon build
 source install/local_setup.sh
 ros2 launch tucan_sim tucan_sim.launch.py
 ```
+
+## 3. Structure
+This package stack contains 4 types of packages:
+- Flight modes: Packages containing nodes that govern a particular task in-flight
+- Drivers: Packages containing nodes that interface with peripherals
+- Vision: Packages containing nodes that do computer vision stuff
+- Other: The Mission Director, Offboard Handler, and Bringup packages
+
+The tucan_bringup package contains only the launch files for the entire package stack. Also contains an example.
+
+### Flight modes
+The flight mode nodes all follow the same structure in both code and functioning. They listen to the '/mission_state' topic on which the Mission Director node publishes their start signal in the form of the number that is assigned to the flight mode. The flight modes set themselves to active in this case, which cause them to execute their programming. The flight modes periodically publish a status back to the Mission Director on the '/mode_status' topic. When the flight modes are done and want to hand back control to the Mission Director, they publish 'MODE_FINISHED' as status on this topic.
