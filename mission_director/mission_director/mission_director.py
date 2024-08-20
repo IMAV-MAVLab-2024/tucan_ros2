@@ -51,7 +51,7 @@ class MissionDirector(Node):
         match self.__state:
             case 'idle':
                 self.__publish_state()
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
 
                 if self.__in_control:
                     self.__state = 'task_takeoff'
@@ -60,7 +60,7 @@ class MissionDirector(Node):
             case 'hover':
                 self.__publish_state()           
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -74,7 +74,7 @@ class MissionDirector(Node):
             case 'follow_line':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -85,7 +85,7 @@ class MissionDirector(Node):
             case 'task_photography':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -96,7 +96,7 @@ class MissionDirector(Node):
             case 'task_gate':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -107,7 +107,7 @@ class MissionDirector(Node):
             case 'task_land':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -118,7 +118,7 @@ class MissionDirector(Node):
             case 'task_pickup':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -129,7 +129,7 @@ class MissionDirector(Node):
             case 'task_place':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -140,7 +140,7 @@ class MissionDirector(Node):
             case 'task_window':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 if self.__in_control:
                     self.laps += 1 # Increase laps counter when window task is finished
@@ -151,7 +151,7 @@ class MissionDirector(Node):
             case 'task_takeoff':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
                 if self.__in_control:
@@ -161,7 +161,7 @@ class MissionDirector(Node):
             case 'find_line':
                 self.__publish_state()
                 
-                self.get_logger().info('State: {self.__state}')
+                self.get_logger().info(f'State: {self.__state}')
                 
                 if self.__in_control:
                     self.__state = 'follow_line'
@@ -171,7 +171,7 @@ class MissionDirector(Node):
         """Publish the current state to the mission_state topic
         """
         msg = Mode()
-        msg.mode_id = self.__state_dict[int(self.__state)]
+        msg.mode_id = int(self.__state_dict[self.__state])
         self.state_publisher.publish(msg)
     
     def __listener_callback(self, msg):

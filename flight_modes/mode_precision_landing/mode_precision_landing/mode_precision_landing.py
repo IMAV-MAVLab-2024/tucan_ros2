@@ -10,6 +10,7 @@ class ModePrecisionLanding(Node):
     def __init__(self):
         super().__init__('mode_precision_landing')
         self.mode = 5 # Precision landing mode ID is 5, DON'T CHANGE
+        self.__frequency = 1. # Node frequency in Hz
         self.state_subscriber = self.create_subscription(Mode,'/mission_state', self.__listener_callback,1)
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
         self.is_active = False
