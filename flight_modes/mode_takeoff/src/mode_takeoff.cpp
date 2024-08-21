@@ -80,6 +80,8 @@ void ModeTakeoff::timer_callback()
 		if (counter > 20)
 		{
 			mode_status_ = MODE_FINISHED;
+			RCLCPP_INFO(this->get_logger(), "Takeoff finished");
+			publish_mode_status();
 			counter = 0;
 		}
 	}
@@ -132,6 +134,7 @@ void ModeTakeoff::publish_mode_status()
 	{
 		msg.busy = false;
 	}
+	mode_status_publisher_->publish(msg);
 }
 
 void ModeTakeoff::mission_state_callback(const Mode::SharedPtr msg)

@@ -12,10 +12,23 @@ The package can be launched with 'ros2 launch tucan_bringup simple_exp.launch.py
 def generate_launch_description():
     ld = LaunchDescription()
     
-    # Drivers
-    camera_driver_node = Node(
+    # Drivers - Front camera
+    front_camera_driver_node = Node(
         package='driver_camera',
         executable='camera_driver_node',
+        parameters=[
+            {"camera_type": 'front'}
+        ],
+        name='front_cam_driver'
+    )
+    # Drivers - Downward camera
+    down_camera_driver_node = Node(
+        package='driver_camera',
+        executable='camera_driver_node',
+        parameters=[
+            {"camera_type": 'down'}
+        ],
+        name='down_cam_driver'
     )
     
     # Vision nodes
@@ -63,7 +76,8 @@ def generate_launch_description():
     )
     
     # Add all the actions
-    ld.add_action(camera_driver_node)
+    ld.add_action(front_camera_driver_node)
+    ld.add_action(down_camera_driver_node)
     
     ld.add_action(ar_detection_node)
     ld.add_action(line_detection_node)

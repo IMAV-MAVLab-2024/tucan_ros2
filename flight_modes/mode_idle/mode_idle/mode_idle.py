@@ -31,7 +31,6 @@ class ModeIdle(Node):
     def state_callback(self, msg):
         # Activate node if mission state is idle
         if msg.mode_id == self.mode:
-            self.get_logger().info('Idle mode active')
             self.is_active = True
         
     def vehicle_status_callback(self, msg):
@@ -53,14 +52,14 @@ class ModeIdle(Node):
     def timer_callback(self):
         if self.is_active:
             if self.armed and self.offboard_enabled:
-                self.get_logger().info('Offboard TRUE \t Armed TRUE')
+                self.get_logger().info(f'Offboard {self.offboard_enabled} \t Armed {self.armed}')
                 self.is_active = False
             elif self.offboard_enabled and not self.armed:
-                self.get_logger().info('Offboard TRUE \t Armed FALSE')
+                self.get_logger().info(f'Offboard {self.offboard_enabled} \t Armed {self.armed}')
             elif not self.offboard_enabled and self.armed:
-                self.get_logger().info('Offboard FALSE \t Armed TRUE')
+                self.get_logger().info(f'Offboard {self.offboard_enabled} \t Armed {self.armed}')
             else:
-                self.get_logger().info('Offboard FALSE \t Armed FALSE')
+                self.get_logger().info(f'Offboard {self.offboard_enabled} \t Armed {self.armed}')
             self.publish_mode_status()
     
     def publish_mode_status(self):
