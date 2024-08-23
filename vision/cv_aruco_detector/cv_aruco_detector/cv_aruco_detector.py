@@ -27,7 +27,7 @@ class MarkerDetector(Node):
         self.get_logger().info("CV AR detection Node has been started")
         self.yaw_offset_publisher = self.create_publisher(ARMarker, "cv_aruco_detector", int(fps))
         self.bridge_for_CV = CvBridge()
-        self.subscription = self.create_subscription(Image, "laptop_camera_image", self.ImageLoop, int(fps))
+        self.subscription = self.create_subscription(Image, "down_camera_image", self.ImageLoop, int(fps))
 
     def RemoveBackground(self,image):
         up = 100
@@ -48,11 +48,12 @@ class MarkerDetector(Node):
         # to have a maximum width of 600 pixels
         # img = imutils.resize(img, width=1000)
         img = self.bridge_for_CV.imgmsg_to_cv2(data)
-        arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT["DICT_5X5_1000"])
-        arucoParams = cv2.aruco.DetectorParameters_create()
+        arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT["DICT_5X5_1000"])
+        arucoParams = cv2.aruco.DetectorParameters()
+        arucoDetector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
         # detect ArUco markers in the input frame
-        (corners, ids, rejected) = cv2.aruco.detectMarkers(img, arucoDict, parameters=arucoParams)
+        (corners, ids, rejected) = arucoDetector.detectMarkers(img)
 
         # verify *at least* one ArUco marker was detected
         if len(corners) > 0:
@@ -109,7 +110,7 @@ class MarkerDetector(Node):
             msg.x = 0
             msg.y = 0
         self.yaw_offset_publisher.publish(msg)
-        self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
+        self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
 
         # cv2.imshow("window_frame", img)
         # if cv2.waitKey(1) & 0xFF == ord('q'):

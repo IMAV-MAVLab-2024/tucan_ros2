@@ -24,7 +24,7 @@ class LineDetector(Node):
         self.get_logger().info("CV Line detection Node has been started")
         self.yaw_offset_publisher = self.create_publisher(LineFollower, "cv_line_detection",int(fps))
         self.bridge_for_CV = CvBridge()
-        self.subscription = self.create_subscription(Image, "laptop_camera_image", self.ImageLoop, int(fps))
+        self.subscription = self.create_subscription(Image, "down_camera_image", self.ImageLoop, int(fps))
 
     def RemoveBackground(self,image):
         up = 200
@@ -157,7 +157,7 @@ class LineDetector(Node):
         msg.avg_offset = final_offset/N_SLICES
         msg.angle = final_yaw_angle/N_SLICES
         self.yaw_offset_publisher.publish(msg)
-        self.get_logger().debug("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
+        self.get_logger().info("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
 
 def main():
     rclpy.init()
