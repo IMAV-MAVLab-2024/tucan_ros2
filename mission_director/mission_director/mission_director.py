@@ -31,7 +31,7 @@ class MissionDirector(Node):
                              'idle': 0}            # Do-nothing state
 
         self.__next_task = 'task_photography' # Assign what the next task to be executed is
-        self.__in_control = False # Boolean stating if the mission director has control
+        self.__transition = False # Boolean stating if the mission director has control
         self.__from_follow_line = False # Boolean stating if the mission director is coming from follow line
 
         self.laps = 0 # Counter for how many laps we have flown
@@ -40,7 +40,7 @@ class MissionDirector(Node):
         self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
 
     def timer_callback(self):
-        self.__run_state_machine()
+        self.__publish_state()
 
     def __run_state_machine(self):
         # State machine implementation
@@ -49,9 +49,9 @@ class MissionDirector(Node):
                 self.__publish_state()
                 self.get_logger().info(f'State: {self.__state}')
              
-                if self.__in_control:
+                if self.__transition:
                     self.__state = 'task_takeoff'
-                    self.__in_control = False
+                    self.__transition = False
 
             case 'hover':
                 self.__publish_state()           
@@ -59,13 +59,13 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     if self.__from_follow_line:
                         self.__state = self.__next_task
                         self.__from_follow_line = False
                     else:
                         self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
 
             case 'follow_line':
                 self.__publish_state()
@@ -73,10 +73,10 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__state = 'hover'
                     self.__from_follow_line = True
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
 
             case 'task_photography':
                 self.__publish_state()
@@ -84,10 +84,10 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__next_task = 'task_gate'
                     self.__state = 'hover'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'task_gate':
                 self.__publish_state()
@@ -95,10 +95,10 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__next_task = 'task_land'
                     self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'task_land':
                 self.__publish_state()
@@ -106,10 +106,10 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__next_task = 'task_takeoff'
                     self.__state = 'idle'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'task_pickup':
                 self.__publish_state()
@@ -117,10 +117,10 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__next_task = 'task_place'
                     self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
 
             case 'task_place':
                 self.__publish_state()
@@ -128,39 +128,39 @@ class MissionDirector(Node):
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__next_task = 'task_window'
                     self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'task_window':
                 self.__publish_state()
                 
                 self.get_logger().info(f'State: {self.__state}')
                 
-                if self.__in_control:
+                if self.__transition:
                     self.laps += 1 # Increase laps counter when window task is finished
                     self.__next_task = 'task_photography'
                     self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'task_takeoff':
                 self.__publish_state()
                 self.get_logger().info(f'State: {self.__state}')
                 
                 # State transition
-                if self.__in_control:
+                if self.__transition:
                     self.__state = 'hover'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
                 
             case 'find_line':
                 self.__publish_state()
                 
                 self.get_logger().info(f'State: {self.__state}')
                 
-                if self.__in_control:
+                if self.__transition:
                     self.__state = 'follow_line'
-                    self.__in_control = False # Reset control flag
+                    self.__transition = False # Reset control flag
     
     def __publish_state(self):
         """Publish the current state to the mission_state topic
@@ -176,23 +176,25 @@ class MissionDirector(Node):
         # MODE_FINISHED = 3      # Mode has finished
         status = msg.mode_status
         match status:
-            case 0: # Go to hover in case of error
-                self.get_logger().debug('Mode error - control to MD')
-                self.__in_control = True
-                self.__state = 'hover'
+            case 0: # Land in case of error
+                self.__transition = False
+                self.__state = 'land'
+                # Run state machine to go to land state
+                self.__run_state_machine()
             
             case 1:
-                self.get_logger().debug('Mode inactive - control to MD')
-                self.__in_control = True
-                self.__state = 'hover'
+                self.__transition = False
+                self.__state = 'land'
+                self.__run_state_machine()
             
             case 2:
-                self.get_logger().debug('Mode active')
-                self.__in_control = False
+                self.__transition = False
             
             case 3:
-                self.get_logger().debug('Mode finished - control to MD')
-                self.__in_control = True
+                self.get_logger().info('Mode finished - control to MD')
+                # Run state machine while allowing to transition to the next state
+                self.__transition = True
+                self.__run_state_machine()
         
 def main(args=None):
     rclpy.init(args=args)

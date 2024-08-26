@@ -110,7 +110,7 @@ class MarkerDetector(Node):
             msg.x = 0
             msg.y = 0
         self.yaw_offset_publisher.publish(msg)
-        self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
+        self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
 
         # cv2.imshow("window_frame", img)
         # if cv2.waitKey(1) & 0xFF == ord('q'):

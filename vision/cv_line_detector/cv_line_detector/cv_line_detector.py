@@ -157,7 +157,7 @@ class LineDetector(Node):
         msg.avg_offset = final_offset/N_SLICES
         msg.angle = final_yaw_angle/N_SLICES
         self.yaw_offset_publisher.publish(msg)
-        self.get_logger().info("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
+        self.get_logger().debug("Publishing: angle:%d offset:%d" % (msg.angle,msg.avg_offset))
 
 def main():
     rclpy.init()
