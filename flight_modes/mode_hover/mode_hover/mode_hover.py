@@ -13,18 +13,18 @@ class ModeHover(Node):
         super().__init__('mode_hover')
         self.get_logger().info('ModeHover initialized')
         self.mode = 1 # Hover mode ID is 1, DON'T CHANGE
-        self.__frequency = 20 # Frequency in Hz
+        self.__frequency = 10 # Frequency in Hz
         
         self.is_active = False
         self.counter = 0
         
         self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
-        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
+        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
         
         self.setpoint_publisher_ = self.create_publisher(TrajectorySetpoint, "/trajectory_setpoint", 10)
         self.control_mode_publisher = self.create_publisher(OffboardControlMode, "/offboard_control_mode", 10)
         
-        self.AR_subsciber_ = self.create_subscription(ARMarker, "/cv_ar_detection", self.AR_callback, 10)
+        self.AR_subsciber_ = self.create_subscription(ARMarker, "/cv_aruco_detection", self.AR_callback, 10)
         
         self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
         
@@ -45,12 +45,14 @@ class ModeHover(Node):
         if self.is_active:
             self.publish_mode_status()
             self.publish_trajectory_setpoint()
-            self.publish_offboard_position_mode()
+            self.publish_offboard_velocity_mode()
             self.counter += 1
         
-        # Exit the noden after 1 second of activity
+        # Exit the node after 1 second of activity
         if self.counter == self.__frequency*1.0:
+            self.get_logger().info('Mode Hover deactivated after 1.0 seconds of activity')
             self.is_active = False
+            self.publish_mode_status()
             self.counter = 0
         
     def publish_mode_status(self):
@@ -66,16 +68,19 @@ class ModeHover(Node):
     def state_callback(self, msg):
         # Activate node if mission state is idle
         if msg.mode_id == self.mode:
+            self.get_logger().info('ModeHover activated')
             self.is_active = True
         
     def AR_callback(self, msg):
-        # offsets are between -0.5 and 0.5 and flipped to the FRD frame
-        self.AR_y_offset = float(msg.x)/self.x_px - 0.5
-        self.AR_x_offset = float(msg.y)/self.y_px - 0.5
-        
-        if msg.id == 0:
-            self.AR_x_offset = 0.
-            self.AR_y_offset = 0.
+        # Update the 
+        if self.is_active:
+            # offsets are between -0.5 and 0.5 and flipped to the FRD frame
+            self.AR_y_offset = float(msg.x)/self.x_px - 0.5
+            self.AR_x_offset = float(msg.y)/self.y_px - 0.5
+            
+            if msg.id == 0:
+                self.AR_x_offset = 0.
+                self.AR_y_offset = 0.
 
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
@@ -85,7 +90,7 @@ class ModeHover(Node):
         msg.yaw = 0.0
         self.setpoint_publisher_.publish(msg)
     
-    def publish_offboard_position_mode(self):
+    def publish_offboard_velocity_mode(self):
         msg = OffboardControlMode()
         msg.position = False
         msg.velocity = True

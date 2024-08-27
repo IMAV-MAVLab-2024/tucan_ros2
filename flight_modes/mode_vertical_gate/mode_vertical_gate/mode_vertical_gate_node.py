@@ -24,7 +24,7 @@ class ModeVerticalGate(Node):
         self.odometry_subscriber = self.create_subscription(VehicleOdometry, "/fmu/out/vehicle_odometry", self.__odometry_callback, 1)
         self.position = [0.0, 0.0, 0.0]
         
-        self.ar_subscriber = self.create_subscription(ARMarker, "/cv_ar_detection", self.__ar_callback, 1)
+        self.ar_subscriber = self.create_subscription(ARMarker, "/cv_aruco_detection", self.__ar_callback, 1)
         self.last_ar_marker = 0
         
         self.frequency = 1. # Node frequency in Hz
@@ -54,8 +54,8 @@ class ModeVerticalGate(Node):
 
         # Change to velocity mode
         msg = OffboardControlMode()
-        msg.position = False
-        msg.velocity = True
+        msg.position = True
+        msg.velocity = False
         msg.acceleration = False
         msg.attitude = False
         msg.body_rate = False
@@ -73,6 +73,7 @@ class ModeVerticalGate(Node):
         
         # Deactivate node to go to next state
         self.is_active = False
+        self.publish_mode_status()
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:

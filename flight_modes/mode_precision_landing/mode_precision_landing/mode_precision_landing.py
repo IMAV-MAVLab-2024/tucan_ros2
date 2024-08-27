@@ -2,7 +2,9 @@ import rclpy
 from rclpy.node import Node
 
 from tucan_msgs.msg import Mode, ModeStatus, ARMarker
-from px4_msgs.msg import TrajectorySetpoint, OffboardControlMode
+from px4_msgs.msg import TrajectorySetpoint, OffboardControlMode, VehicleOdometry
+
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 class ModePrecisionLanding(Node):
     """Flight mode for landing on an AR marker
@@ -13,21 +15,24 @@ class ModePrecisionLanding(Node):
         self.__frequency = 1. # Node frequency in Hz
         self.state_subscriber = self.create_subscription(Mode,'/mission_state', self.__listener_callback,1)
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
+        QOSprofile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, depth=10)
+        self.velocity_subscriber = self.create_subscription(VehicleOdometry, "/fmu/out/vehicle_odometry", self.__velocity_callback, qos_profile=QOSprofile)
         self.is_active = False
-        
-        self.frequency = 1. # Node frequency in Hz
         
         self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
         
-        self.ar_subscriber = self.create_subscription(ARMarker, '/cv_aruco_detector', self.__ar_callback, 10)
+        self.ar_subscriber = self.create_subscription(ARMarker, '/cv_aruco_detection', self.__ar_callback, 10)
         self.setpoint_publisher = self.create_publisher(TrajectorySetpoint, '/trajectory_setpoint', 10)
         self.control_mode_publisher = self.create_publisher(OffboardControlMode, '/control_mode', 10)
-        self.__landing_speed = -0.5 # m/s, downward vertical speed
         
         self.AR_x_offset = 0.
         self.AR_y_offset = 0.
         
+        self.landed_counter = 0
+        
         # settings
+        self.__landing_speed = -0.5 # m/s, downward vertical speed
+        self.landed_time = 5. # seconds
         self.forward_velocity_gain = 0.5
         self.sideways_velocity_gain = 0.5
         self.x_px = 800
@@ -35,11 +40,19 @@ class ModePrecisionLanding(Node):
         
     def execute(self):
         """Execute precision landing mode.
-        Set self.is_active to False when finished.
+        Publishes the velocity mode and velocity setpoints.
         """
-        self.get_logger().info('Executing precision landing mode')
 
-        # Keep marker in the middle
+        self.publish_offboard_velocity_mode()
+        self.publish_trajectory_setpoint()
+        
+        # Exit condition
+        # When landed for the amount of seconds specified, set mode to inactive
+        if self.landed_counter == self.landed_time*self.__frequency:
+            self.is_active = False
+            self.publish_mode_status()
+            self.landed_counter = 0
+            self.get_logger().info('Precision landing mode finished')
         
     def __ar_callback(self, msg):
         """Set AR marker offsets on node class
@@ -54,7 +67,17 @@ class ModePrecisionLanding(Node):
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
+            self.get_logger().info('Activating precision landing mode')
             self.is_active = True
+    
+    """ Velocity message callback, adds 1 to landing counter if the vertical velocity is below 0.1 m/s
+    
+    """
+    def __velocity_callback(self, msg):
+        if msg.velocity[2] < 0.1:
+            self.landed_counter += 1
+        else:
+            self.landed_counter = 0
     
     def timer_callback(self):
         if self.is_active:
@@ -79,7 +102,7 @@ class ModePrecisionLanding(Node):
         msg.yaw = 0.0
         self.setpoint_publisher.publish(msg)
     
-    def publish_offboard_position_mode(self):
+    def publish_offboard_velocity_mode(self):
         msg = OffboardControlMode()
         msg.position = False
         msg.velocity = True

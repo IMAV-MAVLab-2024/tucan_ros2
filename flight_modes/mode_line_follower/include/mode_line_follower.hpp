@@ -33,12 +33,18 @@ private:
 	// Line Follow mode ID is 2, DON'T CHANGE
 	uint8_t own_mode_id_ = 2;
 
-	const float forward_vel = 1.0;
-	float lateral_vel;
-	float yaw_reference;
+	const float forward_vel = 1.0; 	// Forward velocity in m/s
+	float lateral_vel;			   	// Lateral velocity in m/s 
+	float yaw_reference;			// Yaw reference in radians
 
 	const float K_lateral = 1.0;
 	const float K_yaw = 0.1;
+
+	const float ar_tolerance = 25.0; // Tolerance in pixels for AR marker detection. Exit condition.
+
+	uint8_t last_ar_id;
+	float line_angle;
+	float ar_radius;
 	
 	rclcpp::TimerBase::SharedPtr timer_;
 

@@ -20,16 +20,15 @@ class ModeTransparentWindow(Node):
         
     def execute(self):
         """Execute the pick up mode.
-        Set self.is_active to False when finished.
+        Set self.is_active to False when finished and publish to mission director.
         """
-        self.get_logger().info('Executing transparent window mode')
-
-        # Get the sample location in camera frame
-        
-        # 
+        self.is_active = False
+        self.get_logger().info('Transparent window mode finished')
+        self.publish_mode_status()
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
+            self.get_logger().info('Activating transparent window mode')
             self.is_active = True
     
     def timer_callback(self):

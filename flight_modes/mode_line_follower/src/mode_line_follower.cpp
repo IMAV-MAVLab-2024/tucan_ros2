@@ -59,10 +59,13 @@ using std::placeholders::_1;
 ModeLineFollower::ModeLineFollower() :
 		Node("mode_line_follower"),
 		mode_status_{MODE_INACTIVE},
+		lateral_vel{0.0},
+		yaw_reference{0.0},
+		line_angle{0.0},
 		setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)},
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
-		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_ar_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
+		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
 		md_state_subscriber_{this->create_subscription<Mode>("/mission_state", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
@@ -75,14 +78,13 @@ void ModeLineFollower::timer_callback(void)
 	if (mode_status_==MODE_ACTIVE)
 	{
 		publish_mode_status();
+		RCLCPP_INFO(this->get_logger(), "Line angle %f \t AR marker ID: %d", line_angle, last_ar_id);
 	}
 }
 
-
 /**
- * @brief Publish a trajectory setpoint
- *        For this example, it sends a trajectory setpoint to make the
- *        vehicle hover at 5 meters with a yaw angle of 180 degrees.
+ * @brief Publish a velocity setpoint
+ *        Sends the set forward velocity and lateral velocity along with a yaw reference to the controller.
  */
 void ModeLineFollower::publish_setpoint()
 {
@@ -93,6 +95,12 @@ void ModeLineFollower::publish_setpoint()
 	setpoint_publisher_->publish(msg);
 }
 
+/**
+ * @brief Publish the mode status message
+ *        Publishes the mode ID, mode status and busy flag to the mission director.
+ * 		  After setting mode_status to MODE_FINISHED, call this function again to signal to the mission
+ * 		  director that the mode has finished.
+ */
 void ModeLineFollower::publish_mode_status()
 {
 	// Publish the current state of the mode
@@ -118,7 +126,7 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
 {
 	if (msg->mode_id == own_mode_id_)
 	{
-		mode_status_ = MODE_ACTIVE;
+		activate_node();
 	}
 }
 
@@ -127,6 +135,7 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
  */
 void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 {
+	line_angle = msg->angle;
 	lateral_vel = K_lateral * msg->avg_offset;
 	yaw_reference = K_yaw * msg->angle;
 }
@@ -136,21 +145,37 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
  */
 void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
-	if(msg->x*msg->x + msg->y*msg->y < 10)
+	if (mode_status_ == MODE_ACTIVE)
 	{
-		deactivate_node();
+		last_ar_id = msg->id;
+		ar_radius = msg->x*msg->x + msg->y*msg->y;
+		RCLCPP_INFO(this->get_logger(), "AR radius %f", ar_radius);
+		if(ar_radius < ar_tolerance && ar_radius > 0.0001) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+		{
+			deactivate_node();
+		}
 	}
-
 }
 
+/**
+ * @brief Activate the node
+ * 	  Set the mode status to MODE_ACTIVE and publish a log info message.
+ */
 void ModeLineFollower::activate_node()
 {
 	mode_status_ = MODE_ACTIVE;
+	RCLCPP_INFO(this->get_logger(), "Mode line follower set to active");
 }
 
+/**
+ * @brief Deactivate the node
+ * 	  Set the mode status to MODE_FINISHED, publish a log info message, and signal the mission director.
+ */
 void ModeLineFollower::deactivate_node()
 {
 	mode_status_ = MODE_FINISHED;
+	RCLCPP_INFO(this->get_logger(), "Mode line follower deactivated");
+	publish_mode_status();
 }
 
 

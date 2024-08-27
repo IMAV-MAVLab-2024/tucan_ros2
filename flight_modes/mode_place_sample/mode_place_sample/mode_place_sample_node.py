@@ -21,14 +21,13 @@ class ModePlaceSample(Node):
     def execute(self):
         """Execute the pick up mode.
         """
-        self.get_logger().info('Executing pick up mode')
-
-        # Get the sample location in camera frame
-        
-        # 
+        self.is_active = False
+        self.get_logger().info('Sample place mode finished')
+        self.publish_mode_status()
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
+            self.get_logger().info('Activating sample placing mode')
             self.is_active = True
     
     def timer_callback(self):
