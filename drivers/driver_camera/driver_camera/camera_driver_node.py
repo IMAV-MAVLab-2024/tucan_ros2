@@ -35,7 +35,7 @@ class DriverCamera(Node):
         else:
             self.cap = cv2.VideoCapture(0)
             self.image_publisher = self.create_publisher(Image, '/laptop_camera_image', 1)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)   # only keep most recent image, we dont care about old images 
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)   # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
 
         self.timer = self.create_timer(1/self.FPS, self.get_camera_images)
