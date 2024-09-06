@@ -19,14 +19,14 @@ class DriverCamera(Node):
         self.frame_height = 600
 
         if which_camera == 'down':
-            self.cap = cv2.VideoCapture(31)
+            self.cap = cv2.VideoCapture(22)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
             self.image_publisher = self.create_publisher(Image, '/down_camera_image', 1)
             self.get_logger().info('Opening downward camera')
         elif which_camera == 'front':  
-            self.cap = cv2.VideoCapture(22)
+            self.cap = cv2.VideoCapture(31)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
