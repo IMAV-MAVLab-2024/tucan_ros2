@@ -14,7 +14,7 @@ class DriverCamera(Node):
         # print(which_camera)
 
         # Settings
-        self.FPS= 15
+        self.FPS= 3
         self.frame_width = 800
         self.frame_height = 600
 
@@ -35,17 +35,18 @@ class DriverCamera(Node):
         else:
             self.cap = cv2.VideoCapture(0)
             self.image_publisher = self.create_publisher(Image, '/laptop_camera_image', 1)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)   # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
 
         self.timer = self.create_timer(1/self.FPS, self.get_camera_images)
     
     def get_camera_images(self):
         # Get camera image
-        ret, frame = self.cap.read()     
+        ret, frame = self.cap.read() 
         if ret == True:
             self.get_logger().info('Captured frame successfully')
             # Publish camera image
-            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
+            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="bgr8"))
             # encoding="passthrough"
             self.get_logger().debug('Publishing video frame')
         else:
