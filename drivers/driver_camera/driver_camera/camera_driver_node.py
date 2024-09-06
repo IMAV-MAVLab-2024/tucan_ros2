@@ -19,7 +19,7 @@ class DriverCamera(Node):
         self.frame_height = 600
 
         if which_camera == 'down':
-            self.cap = cv2.VideoCapture(23)
+            self.cap = cv2.VideoCapture(0)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
