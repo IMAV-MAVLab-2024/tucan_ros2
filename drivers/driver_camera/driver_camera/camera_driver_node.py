@@ -44,7 +44,7 @@ class DriverCamera(Node):
         ret, frame = self.cap.read()     
         if ret == True:
             # Publish camera image
-            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame))
+            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
             # encoding="passthrough"
             self.get_logger().debug('Publishing video frame')
             
