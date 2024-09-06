@@ -44,13 +44,12 @@ class DriverCamera(Node):
         # Get camera image
         ret, frame = self.cap.read() 
         if ret == True:
-            self.get_logger().info('Captured frame successfully')
             # Publish camera image
-            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="bgr8"))
+            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="passthrough"))
             # encoding="passthrough"
             self.get_logger().debug('Publishing video frame')
         else:
-            self.get_logger().error('Failed to capture frame')
+            self.get_logger().debug('Failed to capture frame')
             
 def main():
     rclpy.init()
