@@ -22,7 +22,7 @@ def generate_launch_description():
             {"time_per_frame": [1, 30]}
         ],
         remappings=[
-            ('/image_raw', '/down_camera_image')
+            ('/image_raw', '/down_camera_image'),
             ('/image_raw/compressed', '/down_camera_image/compressed')
         ],
         name='down_cam_driver'
