@@ -19,7 +19,7 @@ class DriverCamera(Node):
         self.frame_height = self.get_parameter('frame_height').get_parameter_value().integer_value
         self.frame_width = self.get_parameter('frame_width').get_parameter_value().integer_value
         self.FPS = self.get_parameter('FPS').get_parameter_value().integer_value
-        self.camera_id = self.get_parameter('camera_id').get_parameter_value().string_value
+        self.camera_id = self.get_parameter('camera_id').get_parameter_value().integer_value
 
         self.get_logger().info('Starting camera driver node with the following parameters:')
         self.get_logger().info('Camera ID: ' + str(self.camera_id))
