@@ -18,8 +18,9 @@ def generate_launch_description():
         package='v4l2_camera',
         executable='v4l2_camera_node',
         parameters=[
-            {"video_device": "/dev/video0"},
-            {"time_per_frame": [1, 30]}
+            {"video_device": "/dev/video22"},
+            {"time_per_frame": [1, 30]},
+            {"pixel_format": "UYVY"}
         ],
         remappings=[
             ('/image_raw', '/down_camera_image'),

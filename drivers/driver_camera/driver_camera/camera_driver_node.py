@@ -32,16 +32,11 @@ class DriverCamera(Node):
         self.get_logger().info('Topic Name: ' + str(self.topic_name))
 
 
-        self.cap = cv2.VideoCapture(self.camera_id)
-
-        if not self.cap.isOpened():
-            self.get_logger().error('Error opening camera')
-            return
-
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
         self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
 
         if self.compress:
             self.image_publisher = self.create_publisher(CompressedImage, self.topic_name, 1)
