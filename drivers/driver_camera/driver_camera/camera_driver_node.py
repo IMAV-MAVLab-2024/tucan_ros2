@@ -17,7 +17,7 @@ class DriverCamera(Node):
             self.FPS= 5
             self.frame_width = 800
             self.frame_height = 600
-            self.cap = cv2.VideoCapture(32)
+            self.cap = cv2.VideoCapture(22)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
@@ -27,7 +27,7 @@ class DriverCamera(Node):
             self.FPS= 3
             self.frame_width = 800
             self.frame_height = 600  
-            self.cap = cv2.VideoCapture(23)
+            self.cap = cv2.VideoCapture(31)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
@@ -47,7 +47,7 @@ class DriverCamera(Node):
         if ret == True:
             self.get_logger().info('Captured frame successfully')
             # Publish camera image
-            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
+            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="bgr8"))
             # encoding="passthrough"
             self.get_logger().debug('Publishing video frame')
             
