@@ -55,9 +55,6 @@ class DriverCamera(Node):
         ret, frame = self.cap.read()     
         if ret == True:
             self.get_logger().info('Captured frame successfully')
-            # Publish camera image
-            self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="bgr8"))
-            # encoding="passthrough"
 
             if self.compress:
                 self.get_logger().debug('Compressing image')
@@ -73,7 +70,7 @@ class DriverCamera(Node):
                     self.get_logger().error('Failed to compress image')
             else:
                 self.get_logger().debug('Publishing uncompressed image')
-                self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="passthrough"))
+                self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
             
 def main():
     rclpy.init()
