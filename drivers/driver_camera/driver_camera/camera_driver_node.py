@@ -14,12 +14,14 @@ class DriverCamera(Node):
         self.declare_parameter('FPS', 15)
         self.declare_parameter('frame_width', 800)
         self.declare_parameter('frame_height', 600)
+        self.declare_parameter('topic_name', "/camera_image")
 
         self.compress = self.get_parameter('compress').get_parameter_value().bool_value
         self.frame_height = self.get_parameter('frame_height').get_parameter_value().integer_value
         self.frame_width = self.get_parameter('frame_width').get_parameter_value().integer_value
         self.FPS = self.get_parameter('FPS').get_parameter_value().integer_value
         self.camera_id = self.get_parameter('camera_id').get_parameter_value().integer_value
+        self.topic_name = self.get_parameter('topic_name').get_parameter_value().string_value
 
         self.get_logger().info('Starting camera driver node with the following parameters:')
         self.get_logger().info('Camera ID: ' + str(self.camera_id))
@@ -27,6 +29,7 @@ class DriverCamera(Node):
         self.get_logger().info('FPS: ' + str(self.FPS))
         self.get_logger().info('Frame Width: ' + str(self.frame_width))
         self.get_logger().info('Frame Height: ' + str(self.frame_height))
+        self.get_logger().info('Topic Name: ' + str(self.topic_name))
 
 
         self.cap = cv2.VideoCapture(self.camera_id)
@@ -41,9 +44,9 @@ class DriverCamera(Node):
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         if self.compress:
-            self.image_publisher = self.create_publisher(CompressedImage, '/down_camera_image', 1)
+            self.image_publisher = self.create_publisher(CompressedImage, self.topic_name, 1)
         else:
-            self.image_publisher = self.create_publisher(Image, '/down_camera_image', 1)
+            self.image_publisher = self.create_publisher(Image, self.topic_name, 1)
 
         # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
