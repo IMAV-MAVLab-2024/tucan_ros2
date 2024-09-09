@@ -18,11 +18,11 @@ def generate_launch_description():
         package='driver_camera',
         executable='camera_driver_node',
         parameters=[
-            {"camera_id": '22'},
-            {"compress": 'true'},
-            {"FPS": '20'},
-            {"frame_width": '800'},
-            {"frame_height": '600'}
+            {"camera_id": 22},
+            {"compress": True},
+            {"FPS": 20},
+            {"frame_width": 800},
+            {"frame_height": 600}
         ],
         name='down_cam_driver'
     )
