@@ -9,11 +9,11 @@ class DriverCamera(Node):
     def __init__(self):
         super().__init__('camera_driver_node')
         # Default for laptop testing
-        self.declare_parameter('camera_id', '22')  # down = 22, front = 31, laptop = 0
-        self.declare_parameter('compress', 'false')
-        self.declare_parameter('FPS', '15')
-        self.declare_parameter('frame_width', '800')
-        self.declare_parameter('frame_height', '600')
+        self.declare_parameter('camera_id', 22)  # down = 22, front = 31, laptop = 0
+        self.declare_parameter('compress', False)
+        self.declare_parameter('FPS', 15)
+        self.declare_parameter('frame_width', 800)
+        self.declare_parameter('frame_height', 600)
 
         self.compress = self.get_parameter('compress').get_parameter_value().bool_value
         self.frame_height = self.get_parameter('frame_height').get_parameter_value().integer_value
