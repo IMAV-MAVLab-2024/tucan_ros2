@@ -15,15 +15,15 @@ def generate_launch_description():
 
     # Drivers - Downward camera
     down_camera_driver_node = Node(
-        package='driver_camera',
-        executable='camera_driver_node',
+        package='v4l2_camera',
+        executable='v4l2_camera_node',
         parameters=[
-            {"camera_id": 22},
-            {"compress": True},
-            {"FPS": 20},
-            {"frame_width": 800},
-            {"frame_height": 600},
-            {"topic_name": "/down_camera_image"}
+            {"video_device": "/dev/video0"},
+            {"time_per_frame": [1, 30]}
+        ],
+        remappings=[
+            ('/image_raw', '/down_camera_image')
+            ('/image_raw/compressed', '/down_camera_image/compressed')
         ],
         name='down_cam_driver'
     )
