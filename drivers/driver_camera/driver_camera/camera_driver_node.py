@@ -41,9 +41,9 @@ class DriverCamera(Node):
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         if self.compress:
-            self.image_publisher = self.create_publisher(Image, '/down_camera_image', 1)
-        else:
             self.image_publisher = self.create_publisher(CompressedImage, '/down_camera_image', 1)
+        else:
+            self.image_publisher = self.create_publisher(Image, '/down_camera_image', 1)
 
         # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
