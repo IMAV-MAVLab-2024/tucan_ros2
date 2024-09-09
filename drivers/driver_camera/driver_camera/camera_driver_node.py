@@ -17,7 +17,7 @@ class DriverCamera(Node):
             self.FPS= 5
             self.frame_width = 800
             self.frame_height = 600
-            self.cap = cv2.VideoCapture(23)
+            self.cap = cv2.VideoCapture(32)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
@@ -27,7 +27,7 @@ class DriverCamera(Node):
             self.FPS= 3
             self.frame_width = 800
             self.frame_height = 600  
-            self.cap = cv2.VideoCapture(32)
+            self.cap = cv2.VideoCapture(23)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
