@@ -13,20 +13,21 @@ class DriverCamera(Node):
         which_camera = self.get_parameter('camera_type').get_parameter_value().string_value
         # print(which_camera)
 
-        # Settings
-        self.FPS= 15
-        self.frame_width = 800
-        self.frame_height = 600
-
         if which_camera == 'down':
-            self.cap = cv2.VideoCapture(31)
+            self.FPS= 5
+            self.frame_width = 800
+            self.frame_height = 600
+            self.cap = cv2.VideoCapture(23)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
             self.image_publisher = self.create_publisher(Image, '/down_camera_image', 1)
             self.get_logger().info('Opening downward camera')
-        elif which_camera == 'front':  
-            self.cap = cv2.VideoCapture(22)
+        elif which_camera == 'front':
+            self.FPS= 3
+            self.frame_width = 800
+            self.frame_height = 600  
+            self.cap = cv2.VideoCapture(32)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
             self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
@@ -35,6 +36,7 @@ class DriverCamera(Node):
         else:
             self.cap = cv2.VideoCapture(0)
             self.image_publisher = self.create_publisher(Image, '/laptop_camera_image', 1)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)   # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
 
         self.timer = self.create_timer(1/self.FPS, self.get_camera_images)
