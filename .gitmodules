@@ -1,3 +1,6 @@
 [submodule "px4_msgs"]
 	path = px4_msgs
 	url = git@github.com:IMAV-MAVLab-2024/px4_msgs.git
+[submodule "ros2_v4l2_camera"]
+	path = ros2_v4l2_camera
+	url = git@github.com:IMAV-MAVLab-2024/ros2_v4l2_camera.git
