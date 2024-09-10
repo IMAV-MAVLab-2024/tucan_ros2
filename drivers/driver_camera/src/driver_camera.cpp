@@ -49,7 +49,7 @@ public:
 
         // Set camera properties
         RCLCPP_INFO(this->get_logger(), "0");
-        //if (!cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame width");
+        cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_);
         RCLCPP_INFO(this->get_logger(), "1");
         //if (!cap_.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame height");
         RCLCPP_INFO(this->get_logger(), "2");
@@ -99,7 +99,7 @@ private:
         header.stamp = this->get_clock()->now();
 
         // Publish raw image
-        sensor_msgs::msg::Image::SharedPtr image_msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+        sensor_msgs::msg::Image::SharedPtr image_msg = cv_bridge::CvImage(header, "rgb8", frame).toImageMsg();
         raw_image_publisher_.publish(image_msg);
 
         // Publish Theora-compressed image if enabled
