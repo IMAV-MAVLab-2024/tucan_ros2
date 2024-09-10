@@ -25,9 +25,9 @@ class MarkerDetector(Node):
     def __init__(self):
         super().__init__("cv_aruco_detector")
         self.get_logger().info("CV AR detection Node has been started")
-        self.yaw_offset_publisher = self.create_publisher(ARMarker, "/cv_aruco_detection", int(fps))
+        self.yaw_offset_publisher = self.create_publisher(ARMarker, "/cv_aruco_detection", 1)
         self.bridge_for_CV = CvBridge()
-        self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, int(fps))
+        self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, 1)
 
     def RemoveBackground(self,image):
         up = 100

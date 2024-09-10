@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from px4_msgs.msg import TrajectorySetpoint, OffboardControlMode
+from px4_msgs.msg import TrajectorySetpoint, OffboardControlMode, VehicleLocalPosition
 from tucan_msgs.msg import ModeStatus, Mode, ARMarker
 
 class ModeHover(Node):
@@ -16,9 +16,10 @@ class ModeHover(Node):
         self.__frequency = 10 # Frequency in Hz
         
         self.is_active = False
-        self.counter = 0
         
         self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
+        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, "fmu/out/vehicle_local_position", self.vehicle_local_position_callback, 1)
+
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
         
         self.setpoint_publisher_ = self.create_publisher(TrajectorySetpoint, "/trajectory_setpoint", 10)
@@ -26,34 +27,16 @@ class ModeHover(Node):
         
         self.AR_subsciber_ = self.create_subscription(ARMarker, "/cv_aruco_detection", self.AR_callback, 10)
         
-        self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
-        
         self.AR_x_offset = 0.
         self.AR_y_offset = 0.
         
         # settings
-        self.forward_velocity_gain = 0.5
-        self.sideways_velocity_gain = 0.5
+        self.forward_pos_gain = 0.2
+        self.sideways_pos_gain = 0.2
         self.x_px = 800
         self.y_px = 600
-        
-    def timer_callback(self):
-        """Timer callback executes every 1/frequency seconds
-        Publishes node status and if node is set active, publishes trajectory setpoints and velocity control mode
-        """
 
-        if self.is_active:
-            self.publish_mode_status()
-            self.publish_trajectory_setpoint()
-            self.publish_offboard_velocity_mode()
-            self.counter += 1
-        
-        # Exit the node after 1 second of activity
-        if self.counter == self.__frequency*1.0:
-            self.get_logger().info('Mode Hover deactivated after 1.0 seconds of activity')
-            self.is_active = False
-            self.publish_mode_status()
-            self.counter = 0
+        self.vehicle_local_position_ = None
         
     def publish_mode_status(self):
         msg = ModeStatus()
@@ -62,7 +45,8 @@ class ModeHover(Node):
             msg.mode_status = msg.MODE_ACTIVE
         else:
             msg.mode_status = msg.MODE_FINISHED
-        msg.busy = self.is_active
+
+        msg.busy = False
         self.mode_status_publisher_.publish(msg)
         
     def state_callback(self, msg):
@@ -70,6 +54,8 @@ class ModeHover(Node):
         if msg.mode_id == self.mode:
             self.get_logger().info('ModeHover activated')
             self.is_active = True
+        else:
+            self.is_active = False
         
     def AR_callback(self, msg):
         # Update the 
@@ -81,19 +67,27 @@ class ModeHover(Node):
             if msg.id == 0:
                 self.AR_x_offset = 0.
                 self.AR_y_offset = 0.
+        
+            self.publish_mode_status()
+            self.publish_trajectory_setpoint()
+            self.publish_offboard_position_mode()
+
+    def vehicle_local_position_callback(self, msg):
+        self.vehicle_local_position_ = msg
 
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
-        forward_velocity = self.forward_velocity_gain * self.AR_x_offset
-        sideways_velocity = self.sideways_velocity_gain * self.AR_y_offset
-        msg.velocity = [float(forward_velocity), float(sideways_velocity), float(0.0)]
+        forward_pos = self.vehicle_local_position_.x + self.forward_pos_gain * self.AR_x_offset
+        sideways_pos = self.vehicle_local_position_.y + self.sideways_pos_gain * self.AR_y_offset
+        msg.position = [float(forward_pos), float(sideways_pos), float(1.2)]
+        self.get_logger().info(f'Forward offset {self.forward_pos_gain * self.AR_x_offset}; Sideways offset {self.sideways_pos_gain * self.AR_y_offset}')
         msg.yaw = 0.0
         self.setpoint_publisher_.publish(msg)
     
-    def publish_offboard_velocity_mode(self):
+    def publish_offboard_position_mode(self):
         msg = OffboardControlMode()
-        msg.position = False
-        msg.velocity = True
+        msg.position = True
+        msg.velocity = False
         msg.acceleration = False
         msg.attitude = False
         msg.body_rate = False
