@@ -46,9 +46,12 @@ public:
 
         // Set camera properties
         if (!cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame width");
+        RCLCPP_INFO(this->get_logger(), "1");
         if (!cap_.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame height");
+        RCLCPP_INFO(this->get_logger(), "2");
         //if (!cap_.set(cv::CAP_PROP_FPS, fps_)) RCLCPP_ERROR(this->get_logger(), "Failed to set FPS");
         if (!cap_.set(cv::CAP_PROP_BUFFERSIZE, 1)) RCLCPP_ERROR(this->get_logger(), "Failed to set buffer size");
+        RCLCPP_INFO(this->get_logger(), "3");
 
         RCLCPP_INFO(this->get_logger(), "test");
 
