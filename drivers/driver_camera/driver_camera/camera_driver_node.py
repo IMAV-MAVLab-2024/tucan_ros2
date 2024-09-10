@@ -42,8 +42,8 @@ class DriverCamera(Node):
             self.get_logger().error('Failed to set frame height')
         if not self.cap.set(cv2.CAP_PROP_FPS, self.FPS):
             self.get_logger().error('Failed to set FPS')
-        if not self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1):
-            self.get_logger().error('Failed to set buffer size')
+        #if not self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1):
+        #    self.get_logger().error('Failed to set buffer size')
 
         if self.compress:
             self.image_publisher = self.create_publisher(CompressedImage, self.topic_name, 1)
