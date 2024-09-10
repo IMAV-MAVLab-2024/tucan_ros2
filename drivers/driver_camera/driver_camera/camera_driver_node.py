@@ -53,29 +53,29 @@ class DriverCamera(Node):
         # only keep most recent image, we dont care about old images 
         self.bridge_for_CV = CvBridge()
 
-        self.timer = self.create_timer(1/self.FPS, self.get_camera_images)
-    
-    def get_camera_images(self):
-        # Get camera image
-        ret, frame = self.cap.read()     
-        if ret == True:
-            #self.get_logger().info('Captured frame successfully')
+        while rclpy.ok():
+            ret, frame = self.cap.read()     
+            if ret == True:
+                #self.get_logger().info('Captured frame successfully')
 
-            if self.compress:
-                #self.get_logger().info('Compressing image')
-                # Compress image using JPEG format
-                success, encoded_image = cv2.imencode('.jpg', frame)
-                if success:
-                    compressed_image_msg = CompressedImage()
-                    compressed_image_msg.header.stamp = self.get_clock().now().to_msg()
-                    compressed_image_msg.format = "jpeg"
-                    compressed_image_msg.data = encoded_image.tobytes()  # Convert to bytes
-                    self.image_publisher.publish(compressed_image_msg)
+                if self.compress:
+                    #self.get_logger().info('Compressing image')
+                    # Compress image using JPEG format
+                    success, encoded_image = cv2.imencode('.jpg', frame)
+                    if success:
+                        compressed_image_msg = CompressedImage()
+                        compressed_image_msg.header.stamp = self.get_clock().now().to_msg()
+                        compressed_image_msg.format = "jpeg"
+                        compressed_image_msg.data = encoded_image.tobytes()  # Convert to bytes
+                        self.image_publisher.publish(compressed_image_msg)
+                    else:
+                        self.get_logger().error('Failed to compress image')
                 else:
-                    self.get_logger().error('Failed to compress image')
-            else:
-                #self.get_logger().debug('Publishing uncompressed image')
-                self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
+                    #self.get_logger().debug('Publishing uncompressed image')
+                    self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
+                rclpy.spin_once()
+
+        self.cap.release()
             
 def main():
     rclpy.init()
