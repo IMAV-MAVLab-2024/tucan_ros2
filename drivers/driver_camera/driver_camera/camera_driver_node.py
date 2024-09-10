@@ -45,7 +45,6 @@ class DriverCamera(Node):
         if not self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1):
             self.get_logger().error('Failed to set buffer size')
 
-
         if self.compress:
             self.image_publisher = self.create_publisher(CompressedImage, self.topic_name, 1)
         else:
@@ -60,10 +59,10 @@ class DriverCamera(Node):
         # Get camera image
         ret, frame = self.cap.read()     
         if ret == True:
-            self.get_logger().info('Captured frame successfully')
+            #self.get_logger().info('Captured frame successfully')
 
             if self.compress:
-                self.get_logger().info('Compressing image')
+                #self.get_logger().info('Compressing image')
                 # Compress image using JPEG format
                 success, encoded_image = cv2.imencode('.jpg', frame)
                 if success:
@@ -75,7 +74,7 @@ class DriverCamera(Node):
                 else:
                     self.get_logger().error('Failed to compress image')
             else:
-                self.get_logger().debug('Publishing uncompressed image')
+                #self.get_logger().debug('Publishing uncompressed image')
                 self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
             
 def main():

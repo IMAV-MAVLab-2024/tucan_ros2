@@ -19,13 +19,28 @@ def generate_launch_description():
         executable='camera_driver_node',
         parameters=[
             {"camera_id": 22},
-            {"compress": True},
+            {"compress": False},
             {"FPS": 20},
             {"frame_width": 800},
             {"frame_height": 600},
             {"topic_name": "/down_camera_image"}
         ],
         name='down_cam_driver'
+    )
+
+    # Drivers - Forward camera
+    down_camera_driver_node = Node(
+        package='driver_camera',
+        executable='camera_driver_node',
+        parameters=[
+            {"camera_id": 31},
+            {"compress": True},
+            {"FPS": 20},
+            {"frame_width": 800},
+            {"frame_height": 600},
+            {"topic_name": "/front_camera_image"}
+        ],
+        name='front_cam_driver'
     )
     
     # Offboard handler
