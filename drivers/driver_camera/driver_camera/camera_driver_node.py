@@ -73,7 +73,7 @@ class DriverCamera(Node):
                 else:
                     #self.get_logger().debug('Publishing uncompressed image')
                     self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
-                rclpy.spin_once()
+                rclpy.spin_once(self)
 
         self.cap.release()
             
