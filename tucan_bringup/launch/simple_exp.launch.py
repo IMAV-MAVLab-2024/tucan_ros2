@@ -76,11 +76,11 @@ def generate_launch_description():
     )
     
     # Add all the actions
-    ld.add_action(front_camera_driver_node)
+    # ld.add_action(front_camera_driver_node)
     ld.add_action(down_camera_driver_node)
     
     ld.add_action(ar_detection_node)
-    ld.add_action(line_detection_node)
+    # ld.add_action(line_detection_node)
     
     ld.add_action(idle_node)
     ld.add_action(takeoff_node)

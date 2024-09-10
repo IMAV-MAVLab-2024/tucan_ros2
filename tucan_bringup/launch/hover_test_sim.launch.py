@@ -15,19 +15,19 @@ def generate_launch_description():
     ld = LaunchDescription()
     
     # Drivers - Downward camera
-    down_camera_driver_node = Node(
-        package='driver_camera',
-        executable='camera_driver_node',
-        parameters=[
-            {"camera_id": 22},
-            {"compress": False},
-            {"FPS": 30},
-            {"frame_width": 600},
-            {"frame_height": 400},
-            {"topic_name": "/down_camera_image"}
-        ],
-        name='down_cam_driver'
-    )
+    # down_camera_driver_node = Node(
+    #     package='driver_camera',
+    #     executable='camera_driver_node',
+    #     parameters=[
+    #         {"camera_id": 22},
+    #         {"compress": False},
+    #         {"FPS": 30},
+    #         {"frame_width": 600},
+    #         {"frame_height": 400},
+    #         {"topic_name": "/down_camera_image"}
+    #     ],
+    #     name='down_cam_driver'
+    # )
     
     # Vision nodes
     ar_detection_node = Node(
@@ -69,12 +69,12 @@ def generate_launch_description():
         executable='offboard_handler',
     )
     
-    # Add rosbag
-    rosbag_name =  'test-{date:%Y-%m-%d_%H:%M:%S}.bag'.format(date=datetime.datetime.now())
-    rosbag_record = ExecuteProcess(cmd=['ros2', 'bag', 'record', '-a', '-o', 'rosbags/'+rosbag_name])
+    # # Add rosbag
+    # rosbag_name =  'test-{date:%Y-%m-%d_%H:%M:%S}.bag'.format(date=datetime.datetime.now())
+    # rosbag_record = ExecuteProcess(cmd=['ros2', 'bag', 'record', '-a', '-o', 'rosbags/'+rosbag_name])
     
     # Add all the actions
-    ld.add_action(down_camera_driver_node)
+    # ld.add_action(down_camera_driver_node)
     
     ld.add_action(ar_detection_node)
     # ld.add_action(line_detection_node)
@@ -87,6 +87,6 @@ def generate_launch_description():
     ld.add_action(mission_director)
     ld.add_action(offboard_handler)
     
-    ld.add_action(rosbag_record)
+    # ld.add_action(rosbag_record)
     
     return ld

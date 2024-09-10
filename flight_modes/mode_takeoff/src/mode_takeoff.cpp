@@ -45,6 +45,8 @@
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
 
 #include <mode_takeoff.hpp>
 
@@ -55,14 +57,22 @@ using namespace px4_msgs::msg;
 ModeTakeoff::ModeTakeoff() :
 		Node("mode_takeoff"),
 		mode_status_(MODE_INACTIVE),
-		mission_state_subscriber(this->create_subscription<Mode>("/mission_state", 10, std::bind(&ModeTakeoff::mission_state_callback, this, std::placeholders::_1))),
-		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
-		offboard_control_mode_publisher_{this->create_publisher<OffboardControlMode>("/offboard_control_mode", 10)},
-		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)}
+		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 1)},
+		offboard_control_mode_publisher_{this->create_publisher<OffboardControlMode>("/offboard_control_mode", 1)},
+		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 1)}
 {
+	rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
+	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
+
+	mission_state_subscriber = this->create_subscription<Mode>("/active_mode_id", 1, std::bind(&ModeTakeoff::mission_state_callback, this, std::placeholders::_1));
+	
+	
+	vehicle_odom_subscriber_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&ModeTakeoff::vehicle_odom_callback, this, std::placeholders::_1));
+	vehicle_status_subscriber_ = this->create_subscription<VehicleStatus>("fmu/out/vehicle_status", qos, std::bind(&ModeTakeoff::vehicle_status_callback, this, std::placeholders::_1));
+
 	RCLCPP_INFO(this->get_logger(), "Starting Takeoff mode");
 
-	timer_ = this->create_wall_timer(100ms, std::bind(&ModeTakeoff::timer_callback, this));
+	timer_ = this->create_wall_timer(250ms, std::bind(&ModeTakeoff::timer_callback, this));
 }
 
 /**
@@ -70,19 +80,31 @@ ModeTakeoff::ModeTakeoff() :
  */
 void ModeTakeoff::timer_callback()
 {
-
 	if (mode_status_ == MODE_ACTIVE)
 	{
-		RCLCPP_INFO(this->get_logger(), "Taking off");
 		publish_mode_status();
-		takeoff();
-		counter++;
-		if (counter > 20)
+
+		publish_offboard_position_mode();
+
+		if (!initiated_takeoff)
 		{
-			mode_status_ = MODE_FINISHED;
-			RCLCPP_INFO(this->get_logger(), "Takeoff finished");
-			publish_mode_status();
-			counter = 0;
+			takeoff();
+		}
+		else
+		{
+			//print the current error
+			RCLCPP_INFO(this->get_logger(), "Current error: %f", altitude_ + vehicle_odom_.position[2]);
+			
+			publish_trajectory_setpoint();
+			if (!takeoff_finished && (altitude_ + vehicle_odom_.position[2]) < takeoff_tolerance)
+			{
+				takeoff_finished = true;
+				RCLCPP_INFO(this->get_logger(), "Takeoff finished");
+				mode_status_ = MODE_FINISHED;
+				publish_mode_status();
+				initiated_takeoff = false;
+				busy_ = false;
+			}
 		}
 	}
 }
@@ -112,7 +134,7 @@ void ModeTakeoff::publish_trajectory_setpoint()
 {
 	float z_position = -1.0*altitude_;
 	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, z_position};
+	msg.position = {takeoff_x_, takeoff_y_, z_position};
 	//msg.yaw = 0; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
@@ -126,28 +148,58 @@ void ModeTakeoff::publish_mode_status()
 	mode.mode_id = own_mode_id_;
 	msg.mode = mode;
 	msg.mode_status = mode_status_;
-	if (mode_status_ == MODE_ACTIVE)
-	{
-		msg.busy = true;
-	}
-	else
-	{
-		msg.busy = false;
-	}
+	msg.busy = busy_;
 	mode_status_publisher_->publish(msg);
 }
 
-void ModeTakeoff::mission_state_callback(const Mode::SharedPtr msg)
+void ModeTakeoff::vehicle_odom_callback(const VehicleOdometry& msg)
 {
-	if (msg->mode_id == own_mode_id_)
+	vehicle_odom_ = msg;
+	vehicle_odom_received_ = true;
+}
+
+void ModeTakeoff::vehicle_status_callback(const VehicleStatus& msg)
+{
+	vehicle_status_ = msg;
+	vehicle_status_received_ = true;
+}
+
+void ModeTakeoff::mission_state_callback(const Mode& msg)
+{
+	if (msg.mode_id == own_mode_id_)
 	{
 		mode_status_ = MODE_ACTIVE;
+	}
+	else
+	{
+		mode_status_ = MODE_INACTIVE;
+		initiated_takeoff = false;
+		busy_ = false;
+		takeoff_finished = false;
 	}
 }
 
 void ModeTakeoff::takeoff(){
-	publish_offboard_position_mode();
-	publish_trajectory_setpoint();
+	if (vehicle_odom_received_ && vehicle_status_received_){
+		if (vehicle_status_.nav_state == vehicle_status_.NAVIGATION_STATE_OFFBOARD){
+			if (vehicle_status_.arming_state == vehicle_status_.ARMING_STATE_ARMED){
+				if (!initiated_takeoff){
+					takeoff_x_ = vehicle_odom_.position[0];
+					takeoff_y_ = vehicle_odom_.position[1];
+					initiated_takeoff = true;
+					takeoff_finished = false;
+					busy_ = true;
+				}
+			}else{
+				RCLCPP_INFO(this->get_logger(), "Vehicle not armed, waiting...");
+			}
+		}else{
+			RCLCPP_INFO(this->get_logger(), "Vehicle not in offboard mode, waiting...");
+		}
+	}else{
+		RCLCPP_INFO(this->get_logger(), "Local position not yet received from FCU, waiting...");
+	}
+	
 }
 
 int main(int argc, char *argv[])

@@ -20,7 +20,7 @@ class ModeIdle(Node):
         self.armed = False
         self.is_active = False
         
-        self.state_subscriber_ = self.create_subscription(Mode, "/mission_state", self.state_callback, 10)
+        self.state_subscriber_ = self.create_subscription(Mode, "/active_mode_id", self.state_callback, 10)
         QOSprofile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, depth=10)
         self.armed_subscriber_ = self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status", self.vehicle_status_callback, qos_profile=QOSprofile)
         

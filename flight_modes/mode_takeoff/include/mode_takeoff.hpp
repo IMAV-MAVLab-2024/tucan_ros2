@@ -4,6 +4,8 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/srv/vehicle_command.hpp>
+#include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -24,17 +26,33 @@ public:
 	ModeTakeoff();
 
 private:
-	float altitude_ = 1.0; // Takeoff altitude in meters (positive up)
+	float altitude_ = 1.5; // Takeoff altitude in meters (positive up)
+	float takeoff_tolerance = 0.2; // Takeoff tolerance in meters 
+
+	bool initiated_takeoff = false;		// Flag to check if takeoff has been initiated
+	bool takeoff_finished = false;		// Flag to check if takeoff has finishe
+
+
+	float takeoff_x_ = 0.0;				// Takeoff position in x direction
+	float takeoff_y_ = 0.0;				// Takeoff position in y direction
+
+	bool busy_ = false;
+
+	bool vehicle_odom_received_ = false;
+	bool vehicle_status_received_ = false;
+
+	VehicleOdometry vehicle_odom_;
+	VehicleStatus vehicle_status_;
 
 	mode_status mode_status_;
 
-	int counter = 0;
-
-	uint8_t own_mode_id_ = 9; // Takeoff mode ID is 9, DON'T CHANGE
+	uint8_t own_mode_id_ = Mode::TAKEOFF; // Takeoff mode ID is 9, DON'T CHANGE
 	
 	rclcpp::TimerBase::SharedPtr timer_;
 
 	rclcpp::Subscription<Mode>::SharedPtr mission_state_subscriber;
+	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_odom_subscriber_;
+	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_subscriber_;
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
@@ -44,7 +62,9 @@ private:
 	void publish_offboard_position_mode();
 	void publish_trajectory_setpoint();
 	void publish_mode_status();
-	void mission_state_callback(const Mode::SharedPtr msg);
+	void mission_state_callback(const Mode& msg);
+	void vehicle_odom_callback(const VehicleOdometry& msg);
+	void vehicle_status_callback(const VehicleStatus& msg);
 	void takeoff();
 };
 

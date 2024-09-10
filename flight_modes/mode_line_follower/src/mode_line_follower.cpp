@@ -66,7 +66,7 @@ ModeLineFollower::ModeLineFollower() :
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
 		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
-		md_state_subscriber_{this->create_subscription<Mode>("/mission_state", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
+		md_state_subscriber_{this->create_subscription<Mode>("/active_mode_id", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
 

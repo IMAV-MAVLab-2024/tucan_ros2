@@ -9,7 +9,7 @@ class ModePlaceSample(Node):
     def __init__(self):
         super().__init__('mode_place_sample')
         self.mode = 7 # Sample placing mode ID is 7, DON'T CHANGE
-        self.state_subscriber = self.create_subscription(Mode,'mission_state', self.__listener_callback,1)
+        self.state_subscriber = self.create_subscription(Mode,'active_mode_id', self.__listener_callback,1)
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
         self.is_active = False
         

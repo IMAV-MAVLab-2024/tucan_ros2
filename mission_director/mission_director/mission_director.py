@@ -13,7 +13,7 @@ class MissionDirector(Node):
     """
     def __init__(self):
         super().__init__('mission_director')
-        self.state_publisher = self.create_publisher(Mode, '/mission_state', 10)
+        self.state_publisher = self.create_publisher(Mode, '/active_mode_id', 10)
 
         self.fm_finish_subscriber = self.create_subscription(ModeStatus,'mode_status', self.__listener_callback,1)
 
