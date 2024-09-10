@@ -64,7 +64,7 @@ public:
         image_transport::ImageTransport it(node);
 
         // Publisher for raw images
-        raw_image_publisher_ = it.advertise(topic_name_ + "/raw", 1);
+        raw_image_publisher_ = it.advertise(topic_name_, 1);
 
         // Publisher for Theora compressed images
         if (compress_) {
@@ -87,12 +87,6 @@ private:
     {
         // Capture frame from camera
         cv::Mat frame;
-        if (!cap_.read(frame)) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to capture frame");
-            return;
-        }
-
-        RCLCPP_INFO(this->get_logger(), "Captured frame");
 
         // Prepare the header for both messages
         std_msgs::msg::Header header;
