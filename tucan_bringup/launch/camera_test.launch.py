@@ -35,7 +35,7 @@ def generate_launch_description():
         parameters=[
             {"camera_id": 31},
             {"compress": True},
-            {"FPS": 20},
+            {"FPS": 5},
             {"frame_width": 800},
             {"frame_height": 600},
             {"topic_name": "/front_camera_image"}

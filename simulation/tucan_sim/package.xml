@@ -17,7 +17,6 @@
   <exec_depend>px4_ros2_cpp</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>micro_ros_agent</exec_depend>
 
   
   <export>
