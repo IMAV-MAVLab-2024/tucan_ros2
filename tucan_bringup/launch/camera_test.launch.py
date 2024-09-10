@@ -16,7 +16,7 @@ def generate_launch_description():
     # Drivers - Downward camera
     down_camera_driver_node = Node(
         package='driver_camera',
-        executable='camera_driver_node',
+        executable='driver_camera_node',
         parameters=[
             {"camera_id": 22},
             {"compress": False},
@@ -28,20 +28,20 @@ def generate_launch_description():
         name='down_cam_driver'
     )
 
-    # Drivers - Forward camera
-    front_camera_driver_node = Node(
-        package='driver_camera',
-        executable='camera_driver_node',
-        parameters=[
-            {"camera_id": 31},
-            {"compress": True},
-            {"FPS": 5},
-            {"frame_width": 800},
-            {"frame_height": 600},
-            {"topic_name": "/front_camera_image"}
-        ],
-        name='front_cam_driver'
-    )
+    # # Drivers - Forward camera
+    # front_camera_driver_node = Node(
+    #     package='driver_camera',
+    #     executable='camera_driver_node',
+    #     parameters=[
+    #         {"camera_id": 31},
+    #         {"compress": True},
+    #         {"FPS": 5},
+    #         {"frame_width": 800},
+    #         {"frame_height": 600},
+    #         {"topic_name": "/front_camera_image"}
+    #     ],
+    #     name='front_cam_driver'
+    # )
     
     # Offboard handler
     offboard_handler = Node(
@@ -51,7 +51,7 @@ def generate_launch_description():
 
     # Add all the actions
     ld.add_action(down_camera_driver_node)
-    ld.add_action(front_camera_driver_node)
+    #ld.add_action(front_camera_driver_node)
     ld.add_action(offboard_handler)
 
     return ld
