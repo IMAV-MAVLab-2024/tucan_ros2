@@ -50,6 +50,8 @@ public:
         if (!cap_.set(cv::CAP_PROP_FPS, fps_)) RCLCPP_ERROR(this->get_logger(), "Failed to set FPS");
         if (!cap_.set(cv::CAP_PROP_BUFFERSIZE, 1)) RCLCPP_ERROR(this->get_logger(), "Failed to set buffer size");
 
+        RCLCPP_INFO(this->get_logger(), "test");
+
         // Initialize image transport
         image_transport::ImageTransport it(this->shared_from_this());
 
@@ -60,6 +62,7 @@ public:
         if (compress_) {
             theora_image_publisher_ = it.advertise(topic_name_ + "/theora", 1);
         }
+        RCLCPP_INFO(this->get_logger(), "test2");
 
         // Create a timer to capture and publish frames at the desired rate
         timer_ = this->create_wall_timer(std::chrono::milliseconds(1000 / fps_),
