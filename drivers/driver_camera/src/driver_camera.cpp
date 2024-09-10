@@ -45,6 +45,7 @@ public:
         }
 
         // Set camera properties
+        RCLCPP_INFO(this->get_logger(), "0");
         if (!cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame width");
         RCLCPP_INFO(this->get_logger(), "1");
         if (!cap_.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame height");
