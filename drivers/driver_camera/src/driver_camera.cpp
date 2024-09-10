@@ -74,6 +74,8 @@ private:
             return;
         }
 
+        RCLCPP_INFO(this->get_logger(), "Captured frame");
+
         // Prepare the header for both messages
         std_msgs::msg::Header header;
         header.stamp = this->get_clock()->now();
