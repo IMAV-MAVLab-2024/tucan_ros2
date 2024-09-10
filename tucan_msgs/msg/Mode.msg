@@ -9,5 +9,6 @@ uint8 TASK_PLACE = 7
 uint8 TASK_WINDOW = 8
 uint8 TASK_TAKEOFF = 9
 uint8 TASK_FIND_LINE = 10
+uint8 TASK_Done = 11
 
 uint8 mode_id
