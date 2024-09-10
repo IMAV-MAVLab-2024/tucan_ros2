@@ -10,6 +10,9 @@ class DriverCamera : public rclcpp::Node
 public:
     DriverCamera() : Node("camera_driver_node")
     {
+        rclcpp::NodeOptions options;
+        rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared("camera_driver_node", options);
+
         // Declare parameters
         this->declare_parameter<int>("camera_id", 22);  // down = 22, front = 31, laptop = 0
         this->declare_parameter<bool>("compress", false);
@@ -58,7 +61,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "test");
 
         // Initialize image transport
-        image_transport::ImageTransport it(this->shared_from_this());
+        image_transport::ImageTransport it(node);
 
         // Publisher for raw images
         raw_image_publisher_ = it.advertise(topic_name_ + "/raw", 1);
