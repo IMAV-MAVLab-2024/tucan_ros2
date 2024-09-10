@@ -40,13 +40,15 @@ public:
         if (!cap_.isOpened()) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open camera");
             return;
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Camera opened successfully");
         }
 
         // Set camera properties
-        cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_);
-        cap_.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height_);
-        cap_.set(cv::CAP_PROP_FPS, fps_);
-        cap_.set(cv::CAP_PROP_BUFFERSIZE, 1);
+        if (!cap_.set(cv::CAP_PROP_FRAME_WIDTH, frame_width_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame width");
+        if (!cap_.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height_)) RCLCPP_ERROR(this->get_logger(), "Failed to set frame height");
+        if (!cap_.set(cv::CAP_PROP_FPS, fps_)) RCLCPP_ERROR(this->get_logger(), "Failed to set FPS");
+        if (!cap_.set(cv::CAP_PROP_BUFFERSIZE, 1)) RCLCPP_ERROR(this->get_logger(), "Failed to set buffer size");
 
         // Initialize image transport
         image_transport::ImageTransport it(this->shared_from_this());
