@@ -13,22 +13,34 @@ def generate_launch_description():
     ld = LaunchDescription()
     
     # Drivers - Front camera
-    front_camera_driver_node = Node(
-        package='driver_camera',
-        executable='camera_driver_node',
-        parameters=[
-            {"camera_type": 'front'}
-        ],
-        name='front_cam_driver'
-    )
     # Drivers - Downward camera
     down_camera_driver_node = Node(
         package='driver_camera',
         executable='camera_driver_node',
         parameters=[
-            {"camera_type": 'down'}
+            {"camera_id": 22},
+            {"compress": False},
+            {"FPS": 30},
+            {"frame_width": 600},
+            {"frame_height": 400},
+            {"topic_name": "/down_camera_image"}
         ],
         name='down_cam_driver'
+    )
+
+    # Drivers - Forward camera
+    front_camera_driver_node = Node(
+        package='driver_camera',
+        executable='camera_driver_node',
+        parameters=[
+            {"camera_id": 31},
+            {"compress": False},
+            {"FPS": 2},
+            {"frame_width": 800},
+            {"frame_height": 600},
+            {"topic_name": "/front_camera_image"}
+        ],
+        name='front_cam_driver'
     )
 
     # Vision nodes

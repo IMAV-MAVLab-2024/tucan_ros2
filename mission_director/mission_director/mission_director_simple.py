@@ -55,11 +55,11 @@ class MissionDirector(Node):
                 self.__publish_state()           
                 self.get_logger().info(f'State: {self.__state}')
                 
-                if self.__from_follow_line:
-                    self.__state = self.__next_task
-                    self.__from_follow_line = False
-                else:
-                    self.__state = 'follow_line'
+                # if self.__from_follow_line:
+                #     self.__state = self.__next_task
+                #     self.__from_follow_line = False
+                # else:
+                #     self.__state = 'follow_line'
 
             case 'follow_line':
                 self.__publish_state()
