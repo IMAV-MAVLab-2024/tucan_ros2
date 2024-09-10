@@ -59,9 +59,6 @@ public:
             theora_image_publisher_ = it.advertise(topic_name_ + "/theora", 1);
         }
 
-        // Publisher for JPEG compressed images (using CompressedImage)
-        compressed_image_publisher_ = this->create_publisher<sensor_msgs::msg::CompressedImage>(topic_name_ + "/compressed", 1);
-
         // Create a timer to capture and publish frames at the desired rate
         timer_ = this->create_wall_timer(std::chrono::milliseconds(1000 / fps_),
                                          std::bind(&DriverCamera::get_camera_images, this));
@@ -89,15 +86,6 @@ private:
         if (compress_) {
             theora_image_publisher_.publish(image_msg);
         }
-
-        // Publish JPEG-compressed image (as sensor_msgs::msg::CompressedImage)
-        std::vector<uchar> buf;
-        cv::imencode(".jpg", frame, buf);
-        auto compressed_image_msg = sensor_msgs::msg::CompressedImage();
-        compressed_image_msg.header = header;
-        compressed_image_msg.format = "jpeg";
-        compressed_image_msg.data = std::move(buf);
-        compressed_image_publisher_->publish(compressed_image_msg);
     }
 
     // Parameters
