@@ -31,11 +31,19 @@ class DriverCamera(Node):
         self.get_logger().info('Frame Height: ' + str(self.frame_height))
         self.get_logger().info('Topic Name: ' + str(self.topic_name))
 
+        self.cap = cv2.VideoCapture(self.camera_id)
+        if not self.cap.isOpened():
+            self.get_logger().error('Failed to open camera')
+            return
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
-        self.cap.set(cv2.CAP_PROP_FPS, self.FPS)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        if not self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width):
+            self.get_logger().error('Failed to set frame width')
+        if not self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height):
+            self.get_logger().error('Failed to set frame height')
+        if not self.cap.set(cv2.CAP_PROP_FPS, self.FPS):
+            self.get_logger().error('Failed to set FPS')
+        if not self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1):
+            self.get_logger().error('Failed to set buffer size')
 
 
         if self.compress:
@@ -55,7 +63,7 @@ class DriverCamera(Node):
             self.get_logger().info('Captured frame successfully')
 
             if self.compress:
-                self.get_logger().debug('Compressing image')
+                self.get_logger().info('Compressing image')
                 # Compress image using JPEG format
                 success, encoded_image = cv2.imencode('.jpg', frame)
                 if success:
