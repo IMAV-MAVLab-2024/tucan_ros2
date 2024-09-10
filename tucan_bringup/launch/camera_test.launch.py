@@ -34,7 +34,7 @@ def generate_launch_description():
         executable='camera_driver_node',
         parameters=[
             {"camera_id": 31},
-            {"compress": True},
+            {"compress": False},
             {"FPS": 2},
             {"frame_width": 800},
             {"frame_height": 600},
