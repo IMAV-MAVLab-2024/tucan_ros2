@@ -195,6 +195,9 @@ void ModeTakeoff::takeoff(){
 					takeoff_finished = false;
 					busy_ = true;
 					takeoff_yaw_ = float(quaternion_get_yaw(array_to_eigen_quat(vehicle_odom_.q)));
+					RCLCPP_INFO(this->get_logger(), "Takeoff initiated");
+					//print the takeoff position
+					RCLCPP_INFO(this->get_logger(), "Takeoff position: x=%f, y=%f, z=%f, yaw=%f", takeoff_x_, takeoff_y_, takeoff_z_, takeoff_yaw_);
 				}
 			}else{
 				RCLCPP_INFO(this->get_logger(), "Vehicle not armed, waiting...");
