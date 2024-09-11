@@ -35,6 +35,7 @@ private:
 
 	float takeoff_x_ = 0.0;				// Takeoff position in x direction
 	float takeoff_y_ = 0.0;				// Takeoff position in y direction
+	float takeoff_yaw_ = 0.0;			// Takeoff yaw angle
 
 	bool busy_ = false;
 

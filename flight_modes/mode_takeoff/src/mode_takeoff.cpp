@@ -47,12 +47,14 @@
 #include <rclcpp/rclcpp.hpp>
 #include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
+#include <px4_frame_transforms_lib/frame_transforms.h>
 
 #include <mode_takeoff.hpp>
 
 using namespace std::chrono_literals;
 using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
+using namespace px4_frame_transforms_lib::frame_transforms::utils::quaternion;
 
 ModeTakeoff::ModeTakeoff() :
 		Node("mode_takeoff"),
@@ -135,7 +137,7 @@ void ModeTakeoff::publish_trajectory_setpoint()
 	float z_position = -1.0*altitude_;
 	TrajectorySetpoint msg{};
 	msg.position = {takeoff_x_, takeoff_y_, z_position};
-	//msg.yaw = 0; // [-PI:PI]
+	msg.yaw = takeoff_yaw_; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
 }
@@ -189,6 +191,7 @@ void ModeTakeoff::takeoff(){
 					initiated_takeoff = true;
 					takeoff_finished = false;
 					busy_ = true;
+					takeoff_yaw_ = float(quaternion_get_yaw(array_to_eigen_quat(vehicle_odom_.q)));
 				}
 			}else{
 				RCLCPP_INFO(this->get_logger(), "Vehicle not armed, waiting...");

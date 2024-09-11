@@ -12,6 +12,7 @@ find_package(ament_cmake REQUIRED)
 find_package(tucan_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(px4_frame_transforms_lib REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -20,7 +21,7 @@ include_directories(include)
 
 # mode_takeoff
 add_executable(mode_takeoff src/mode_takeoff.cpp)
-ament_target_dependencies(mode_takeoff rclcpp tucan_msgs px4_msgs)
+ament_target_dependencies(mode_takeoff rclcpp tucan_msgs px4_msgs px4_frame_transforms_lib)
 install(TARGETS mode_takeoff DESTINATION lib/${PROJECT_NAME})
 
 install(
