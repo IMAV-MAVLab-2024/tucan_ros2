@@ -87,6 +87,6 @@ def generate_launch_description():
     ld.add_action(mission_director)
     ld.add_action(offboard_handler)
     
-    ld.add_action(rosbag_record)
+    # ld.add_action(rosbag_record)
     
     return ld
