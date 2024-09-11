@@ -69,9 +69,9 @@ def generate_launch_description():
         executable='offboard_handler',
     )
     
-    # Add rosbag
-    rosbag_name =  'test-{date:%Y-%m-%d_%H:%M:%S}.bag'.format(date=datetime.datetime.now())
-    rosbag_record = ExecuteProcess(cmd=['ros2', 'bag', 'record', '-a', '-o', 'rosbags/'+rosbag_name])
+    # # Add rosbag
+    # rosbag_name =  'test-{date:%Y-%m-%d_%H:%M:%S}.bag'.format(date=datetime.datetime.now())
+    # rosbag_record = ExecuteProcess(cmd=['ros2', 'bag', 'record', '-a', '-o', 'rosbags/'+rosbag_name])
     
     # Add all the actions
     ld.add_action(down_camera_driver_node)
