@@ -13,12 +13,12 @@ MARGIN_PX = 20                       # Margins size (in pixels)
 IMG_SIZE = tuple(i * SQUARE_LENGTH + 2 * MARGIN_PX for i in (SQUARES_VERTICALLY, SQUARES_HORIZONTALLY))
 OUTPUT_NAME = 'ChArUco_Marker.png'
 
-# def create_and_save_new_board():
-#     dictionary = cv2.aruco.getPredefinedDictionary(ARUCO_DICT)
-#     board = cv2.aruco.CharucoBoard((SQUARES_VERTICALLY, SQUARES_HORIZONTALLY), SQUARE_LENGTH, MARKER_LENGTH, dictionary)
-#     size_ratio = SQUARES_HORIZONTALLY / SQUARES_VERTICALLY
-#     img = cv2.aruco.CharucoBoard.generateImage(board, IMG_SIZE, marginSize=MARGIN_PX)
-#     cv2.imwrite(OUTPUT_NAME, img)
+def create_and_save_new_board():
+    dictionary = cv2.aruco.getPredefinedDictionary(ARUCO_DICT)
+    board = cv2.aruco.CharucoBoard((SQUARES_VERTICALLY, SQUARES_HORIZONTALLY), SQUARE_LENGTH, MARKER_LENGTH, dictionary)
+    size_ratio = SQUARES_HORIZONTALLY / SQUARES_VERTICALLY
+    img = cv2.aruco.CharucoBoard.generateImage(board, IMG_SIZE, marginSize=MARGIN_PX)
+    cv2.imwrite(OUTPUT_NAME, img)
 
 # create_and_save_new_board()
 
@@ -31,7 +31,7 @@ def get_calibration_parameters(img_dir):
     detector = cv2.aruco.ArucoDetector(dictionary, params)
     
     # Load images from directory
-    image_files = [os.path.join(img_dir, f) for f in os.listdir(img_dir) if f.endswith(".bmp")]
+    image_files = [os.path.join(img_dir, f) for f in os.listdir(img_dir) if f.endswith(".png")]
     all_charuco_ids = []
     all_charuco_corners = []
 
@@ -39,15 +39,24 @@ def get_calibration_parameters(img_dir):
     for image_file in image_files:
         image = cv2.imread(image_file)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # view the image
+        cv2.imshow('image', image)
+        cv2.waitKey(0)
+
         imgSize = image.shape
+        
         image_copy = image.copy()
         marker_corners, marker_ids, rejectedCandidates = detector.detectMarkers(image)
         
-        if len(marker_ids) > 0: # If at least one marker is detected
-            # cv2.aruco.drawDetectedMarkers(image_copy, marker_corners, marker_ids)
+        if marker_ids is not None and len(marker_ids) > 0: # If at least one marker is detected
+            print(len(marker_ids))
+            # cv2.aruco.drawDetectedMarkers(image_copy, marker_corners
+            # , marker_ids)
             ret, charucoCorners, charucoIds = cv2.aruco.interpolateCornersCharuco(marker_corners, marker_ids, image, board)
-
+            
             if charucoIds is not None and len(charucoCorners) > 3:
+                print(len(charucoIds))
                 all_charuco_corners.append(charucoCorners)
                 all_charuco_ids.append(charucoIds)
     
@@ -59,7 +68,9 @@ SENSOR = 'ov13855'
 LENS = 'default'
 OUTPUT_JSON = 'calibration.json'
 
-mtx, dist = get_calibration_parameters(img_dir='./images/')
+
+home_directory = os.path.expanduser('~/cv_images')  # Path to the home directory
+mtx, dist = get_calibration_parameters(img_dir=home_directory)
 data = {"sensor": SENSOR, "lens": LENS, "mtx": mtx.tolist(), "dist": dist.tolist()}
 
 with open(OUTPUT_JSON, 'w') as json_file:
