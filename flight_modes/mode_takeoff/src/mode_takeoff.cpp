@@ -108,7 +108,13 @@ void ModeTakeoff::timer_callback()
 				busy_ = false;
 			}
 		}
+	}else if (mode_status_ == MODE_FINISHED)
+	{
+		publish_offboard_position_mode();
+		publish_mode_status();
+		publish_trajectory_setpoint();
 	}
+	
 }
 
 /**
