@@ -48,8 +48,6 @@ class MissionDirector(Node):
             case 'hover':      
 
                 self.currently_active_mode_id = Mode.HOVER  
-
-            case 
         
         if self.currently_active_mode_id is not None:
             #self.get_logger().debug(f'Currently active mode: {self.currently_active_mode_id}')
