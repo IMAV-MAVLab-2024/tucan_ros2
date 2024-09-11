@@ -42,7 +42,8 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.TAKEOFF
 
                 if self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'hover'
+                    #self.__state = 'hover'
+                    self.__state = 'takeoff'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
 
             case 'hover':      
