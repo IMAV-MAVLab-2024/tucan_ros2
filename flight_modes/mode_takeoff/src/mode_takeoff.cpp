@@ -104,7 +104,6 @@ void ModeTakeoff::timer_callback()
 				RCLCPP_INFO(this->get_logger(), "Takeoff finished");
 				mode_status_ = MODE_FINISHED;
 				publish_mode_status();
-				initiated_takeoff = false;
 				busy_ = false;
 			}
 		}
@@ -140,7 +139,7 @@ void ModeTakeoff::publish_offboard_position_mode()
  */
 void ModeTakeoff::publish_trajectory_setpoint()
 {
-	float z_position = -1.0*altitude_;
+	float z_position = takeoff_z_ - altitude_;
 	TrajectorySetpoint msg{};
 	msg.position = {takeoff_x_, takeoff_y_, z_position};
 	msg.yaw = takeoff_yaw_; // [-PI:PI]
@@ -174,16 +173,13 @@ void ModeTakeoff::vehicle_status_callback(const VehicleStatus& msg)
 
 void ModeTakeoff::mission_state_callback(const Mode& msg)
 {
-	if (msg.mode_id == own_mode_id_)
+	if (msg.mode_id == own_mode_id_ && mode_status_ == MODE_INACTIVE)
 	{
-		mode_status_ = MODE_ACTIVE;
-	}
-	else
-	{
-		mode_status_ = MODE_INACTIVE;
 		initiated_takeoff = false;
 		busy_ = false;
 		takeoff_finished = false;
+		mode_status_ = MODE_ACTIVE;
+		RCLCPP_INFO(this->get_logger(), "Takeoff mode started");
 	}
 }
 
@@ -194,6 +190,7 @@ void ModeTakeoff::takeoff(){
 				if (!initiated_takeoff){
 					takeoff_x_ = vehicle_odom_.position[0];
 					takeoff_y_ = vehicle_odom_.position[1];
+					takeoff_z_ = vehicle_odom_.position[2];
 					initiated_takeoff = true;
 					takeoff_finished = false;
 					busy_ = true;
