@@ -97,7 +97,6 @@ class ModeHover(Node):
 
     def vehicle_odom_callback(self, msg):
         self.vehicle_odom_ = msg
-        self.get_logger().info(f'Received odom message !!!!!!!!!!!!!!!!!!!!!--+-')
 
     def desired_yaw_callback(self, msg):
         self.desired_yaw = msg.data
