@@ -52,7 +52,7 @@ class MarkerDetector(Node):
         # self.flight_mode_subscriber = self.create_subscription(Mode, '/mission_state', self.flight_mode_callback,1)
 
 
-        self.yaw_offset_publisher = self.create_publisher(ARMarker, "/cv_aruco_detection", 1)
+        self.ar_detection_publisher = self.create_publisher(ARMarker, "/cv_aruco_detection", 1)
         self.bridge_for_CV = CvBridge()
         self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, 1)
 
@@ -66,7 +66,6 @@ class MarkerDetector(Node):
 
         self.previous_id = 0
 
-        self.vehicle_local_position = None
         self.vehicle_odometry = None
         # self.roll, self.pitch, self.yaw = 0.0, 0.0, 0.0
 
@@ -94,7 +93,7 @@ class MarkerDetector(Node):
         (corners, ids, rejected) = arucoDetector.detectMarkers(img)
 
         # verify *at least* one ArUco marker was detected
-        if len(corners) > 0:
+        if len(corners) > 0 and self.vehicle_odometry is not None:
             # flatten the ArUco IDs list
             ids = ids.flatten()
 
@@ -144,10 +143,14 @@ class MarkerDetector(Node):
                 msg.x_global = float(pos_x)
                 msg.y_global = float(pos_y)
                 msg.z_global = float(pos_z)
+                self.get_logger().info("test -te s-----???")
 
                 self.aruco_positions[markerID] = (pos_x, pos_y, pos_z)
 
                 self.previous_id = msg.id
+                self.ar_detection_publisher.publish(msg)
+                self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
+                                (msg.id, msg.x, msg.y, msg.detected))
                                   
         else:
             msg.id = int(self.previous_id)
@@ -157,11 +160,12 @@ class MarkerDetector(Node):
             msg.x_global = float(self.previous_x_global)
             msg.y_global = float(self.previous_y_global)
             msg.z_global = float(self.previous_z_global)
-
-        self.yaw_offset_publisher.publish(msg)
-        # self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
-        self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
+            self.ar_detection_publisher.publish(msg)
+            self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
                                 (msg.id, msg.x, msg.y, msg.detected))
+
+        # self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
+        
 
         # cv2.imshow("window_frame", img)
         # if cv2.waitKey(1) & 0xFF == ord('q'):

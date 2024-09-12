@@ -35,8 +35,8 @@ class MissionDirector(Node):
         # State machine implementation
         match self.__state:
             case 'start':
-                self.get_logger().info(f'Switching to takeoff mode')
-                self.__state = 'takeoff'
+                self.get_logger().info(f'Switching to hover mode')
+                self.__state = 'hover'
                 
             case 'takeoff':
                 self.currently_active_mode_id = Mode.TAKEOFF

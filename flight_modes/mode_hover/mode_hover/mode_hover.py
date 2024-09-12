@@ -52,8 +52,8 @@ class ModeHover(Node):
         # settings
         self.forward_pos_gain = 0.2
         self.sideways_pos_gain = 0.2
-        self.x_px = 800
-        self.y_px = 600
+        self.x_px = 600
+        self.y_px = 400
 
         self.desired_yaw = 0.0 # rad
         self.desired_alt = 1.0 # m
