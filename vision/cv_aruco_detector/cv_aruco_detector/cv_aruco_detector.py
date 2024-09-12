@@ -18,16 +18,17 @@ import rclpy
 from rclpy.node import Node
 from tucan_msgs.msg import ARMarker, Mode
 
-fx = 1.0  # 焦距
-fy = 1.0  # 焦距
-cx = 0.5  # 光学中心
-cy = 0.5  # 光学中心
+fx = 174.88  
+fy = 144.72  
+cx = 239.27  
+cy = 280.49  
 
 # 摄像头内参矩阵（假设已经通过标定获得）
 camera_matrix = np.array([[fx, 0, cx],
                           [0, fy, cy],
                           [0, 0, 1]])
-dist_coeffs = np.zeros((4, 1))  # 假设没有畸变
+#dist_coeffs = np.zeros((4, 1))  # 假设没有畸变
+dist_coeffs = np.array([0.012228,-0.03170,-0.02041,0.01481,0.00599])
 
 # ArUco 标记的真实尺寸（15cm）
 marker_size = 0.15  # 单位: 米
@@ -111,13 +112,15 @@ class MarkerDetector(Node):
                     rvec = rvec[0][0]
                     tvec = tvec[0][0]
                     
-                    # 转换到 Body Frame
-                    tvec_body = np.dot(R.from_quat(self.vehicle_odometry.q).as_matrix(), tvec)
+                    # rotate realtive vector to the NED frame from the body frame
+                    tvec_ned = np.dot(R.from_quat(self.vehicle_odometry.q).as_matrix(), tvec)
 
-                    # 转换到 Inertial Frame
-                    pos_x = self.vehicle_odometry.position[0] + tvec_body[0]
-                    pos_y = self.vehicle_odometry.position[1] + tvec_body[1]
-                    pos_z = self.vehicle_odometry.position[2] + tvec_body[2]
+                    # NED frame position
+                    pos_x = tvec[0]
+                    #pos_x = self.vehicle_odometry.position[0] 
+                    pos_y = tvec[1]
+                    #pos_y = self.vehicle_odometry.position[1]
+                    pos_z = tvec[2]
                     self.previous_x_global = pos_x
                     self.previous_y_global = pos_y
                     self.previous_z_global = pos_z
@@ -136,13 +139,13 @@ class MarkerDetector(Node):
 
                 msg.id = int(markerID)
                 msg.detected = True
-                msg.x = int(cX-middleX)
-                msg.y = int(cY-middleY)  
+                msg.y = int(cX-middleX)  # frd body frame
+                msg.x = int(cY-middleY)  # frd body frame
                 self.previous_x = msg.x
                 self.previous_y = msg.y
-                msg.x_global = float(pos_x)
-                msg.y_global = float(pos_y)
-                msg.z_global = float(pos_z)
+                msg.x_global = float(pos_x)  # ned
+                msg.y_global = float(pos_y)  # ned
+                msg.z_global = float(pos_z)  # ned
                 self.get_logger().info("test -te s-----???")
 
                 self.aruco_positions[markerID] = (pos_x, pos_y, pos_z)

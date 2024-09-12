@@ -85,8 +85,8 @@ class ModeHover(Node):
         if self.is_active:
             if msg.detected:
                 # offsets are between -0.5 and 0.5 and flipped to the FRD frame
-                self.AR_y_offset = float(msg.x)/self.x_px - 0.5
-                self.AR_x_offset = float(msg.y)/self.y_px - 0.5   
+                self.AR_y_offset = float(msg.y)/self.y_px - 0.5
+                self.AR_x_offset = float(msg.x)/self.x_px - 0.5   
             else:
                 self.AR_x_offset = 0.
                 self.AR_y_offset = 0.
