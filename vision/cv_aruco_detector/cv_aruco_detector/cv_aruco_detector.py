@@ -141,22 +141,22 @@ class MarkerDetector(Node):
                 msg.y = int(cY-middleY)  
                 self.previous_x = msg.x
                 self.previous_y = msg.y
-                msg.x_global = pos_x
-                msg.y_global = pos_y
-                msg.z_global = pos_z
+                msg.x_global = float(pos_x)
+                msg.y_global = float(pos_y)
+                msg.z_global = float(pos_z)
 
                 self.aruco_positions[markerID] = (pos_x, pos_y, pos_z)
 
                 self.previous_id = msg.id
                                   
         else:
-            msg.id = self.previous_id
+            msg.id = int(self.previous_id)
             msg.detected = False
-            msg.x = self.previous_x
-            msg.y = self.previous_y
-            msg.x_global = self.previous_x_global
-            msg.y_global = self.previous_y_global
-            msg.z_global = self.previous_z_global
+            msg.x = int(self.previous_x)
+            msg.y =int( self.previous_y)
+            msg.x_global = float(self.previous_x_global)
+            msg.y_global = float(self.previous_y_global)
+            msg.z_global = float(self.previous_z_global)
 
         self.yaw_offset_publisher.publish(msg)
         # self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))
