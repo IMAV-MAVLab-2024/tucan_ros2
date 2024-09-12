@@ -173,14 +173,19 @@ void ModeTakeoff::vehicle_status_callback(const VehicleStatus& msg)
 
 void ModeTakeoff::mission_state_callback(const Mode& msg)
 {
-	if (msg.mode_id == own_mode_id_ && mode_status_ == MODE_INACTIVE)
+	if (msg.mode_id == own_mode_id_)
 	{
-		initiated_takeoff = false;
-		busy_ = false;
-		takeoff_finished = false;
-		mode_status_ = MODE_ACTIVE;
-		RCLCPP_INFO(this->get_logger(), "Takeoff mode started");
+		if (mode_status_ == MODE_INACTIVE){
+			initiated_takeoff = false;
+			busy_ = false;
+			takeoff_finished = false;
+			mode_status_ = MODE_ACTIVE;
+			RCLCPP_INFO(this->get_logger(), "Takeoff mode started");
+		}
+	}else{
+		mode_status_ = MODE_INACTIVE;
 	}
+	
 }
 
 void ModeTakeoff::takeoff(){

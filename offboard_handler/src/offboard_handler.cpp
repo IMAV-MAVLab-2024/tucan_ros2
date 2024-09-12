@@ -41,6 +41,7 @@
 
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 
@@ -59,6 +60,10 @@ OffboardHandler::OffboardHandler() :
 		control_mode_subscriber_(this->create_subscription<OffboardControlMode>("/control_mode", 10, std::bind(&OffboardHandler::control_mode_callback, this, std::placeholders::_1)))
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Offboard Handler node");
+
+	rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
+	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
+	vehicle_status_subscriber_ = this->create_subscription<VehicleStatus>("fmu/out/vehicle_status", qos, std::bind(&OffboardHandler::vehicle_status_callback, this, std::placeholders::_1));
 
     // Initialize setpoint as zero
     setpoint_.timestamp = this->get_clock()->now().nanoseconds() / 1000;
@@ -92,6 +97,12 @@ void OffboardHandler::control_mode_callback(const OffboardControlMode::SharedPtr
 	control_mode_ = *msg;
 }
 
+void OffboardHandler::vehicle_status_callback(const VehicleStatus& msg)
+{
+	vehicle_status_ = msg;
+	vehicle_status_received_ = true;
+}
+
 /**
  * @brief Publish the offboard control mode.
  */
@@ -117,14 +128,16 @@ void OffboardHandler::publish_offboard_control_mode()
  */
 void OffboardHandler::publish_trajectory_setpoint()
 {
-	TrajectorySetpoint msg{};
-    msg = setpoint_;
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	trajectory_setpoint_publisher_->publish(msg);
+	if (vehicle_status_received_ && vehicle_status_.nav_state == vehicle_status_.NAVIGATION_STATE_OFFBOARD) {
+		TrajectorySetpoint msg{};
+		msg = setpoint_;
+		msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+		trajectory_setpoint_publisher_->publish(msg);
 
-	// For safety, set velocity and acceleration to 0 after publishing (e.g. hold position)
-	setpoint_.velocity = {0.0, 0.0, 0.0};
-	setpoint_.acceleration = {0.0, 0.0, 0.0};
+		// For safety, set velocity and acceleration to 0 after publishing (e.g. hold position)
+		setpoint_.velocity = {0.0, 0.0, 0.0};
+		setpoint_.acceleration = {0.0, 0.0, 0.0};
+	}
 }
 
 int main(int argc, char *argv[])

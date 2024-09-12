@@ -37,6 +37,7 @@ class ModeHover(Node):
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
         self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_yaw", self.desired_yaw_callback, 5)
         self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_altitude", self.desired_alt_callback, 5)
+        self.id_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_altitude", self.desired_id_callback, 5)
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
@@ -56,6 +57,7 @@ class ModeHover(Node):
 
         self.desired_yaw = 0.0 # rad
         self.desired_alt = 1.0 # m
+        self.desired_ar_id = None
 
         self.vehicle_odom_position_ = None
         
@@ -72,7 +74,7 @@ class ModeHover(Node):
         
     def state_callback(self, msg):
         # Activate node if mission state is idle
-        if msg.mode_id == self.mode:
+        if msg.mode_id == self.mode and self.is_active == False:
             self.is_active = True
             self.publish_mode_status()
         else:
