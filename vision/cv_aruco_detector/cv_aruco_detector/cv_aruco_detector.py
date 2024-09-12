@@ -49,7 +49,7 @@ class MarkerDetector(Node):
         # Create subscribers
         self.vehicle_odometry = self.create_subscription(
             VehicleOdometry, '/fmu/out/vehicle_odometry', self.vehicle_odometry_callback, qos_profile)
-        self.flight_mode_subscriber = self.create_subscription(Mode, '/mission_state', self.flight_mode_callback,1)
+        # self.flight_mode_subscriber = self.create_subscription(Mode, '/mission_state', self.flight_mode_callback,1)
 
 
         self.yaw_offset_publisher = self.create_publisher(ARMarker, "/cv_aruco_detection", 1)
