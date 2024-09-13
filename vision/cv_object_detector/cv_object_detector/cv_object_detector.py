@@ -18,7 +18,7 @@ dist_coeffs = np.array([0.138739907567143, -0.272661915942306, 0, 0, 0])
 
 # 相机到机体坐标系的旋转和平移
 R_frd_cam = np.array([[0, -1,  0], [1,  0,  0], [0,  0,  1]], dtype=np.float32)
-t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32)
+t_frd_cam = np.array([-0.06, 0.0, 0.0], dtype=np.float32)
 
 # 圆柱体的已知尺寸
 cylinder_radius = 0.03  # 半径（米）

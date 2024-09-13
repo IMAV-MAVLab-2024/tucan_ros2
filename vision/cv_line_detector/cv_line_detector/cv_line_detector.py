@@ -19,7 +19,7 @@ R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
                     [1,  0,  0],
                     [0,  0,  1]], dtype=np.float32)
 
-t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
+t_frd_cam = np.array([-0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
 class LineTracker(Node):
     def __init__(self):
@@ -86,26 +86,33 @@ class LineTracker(Node):
             # Convert the line center to NED frame
             if self.vehicle_odometry is not None:
                 # Convert line center from FRD to NED
-                
 
-                tvec_frd = np.array([center_x, center_y, 0.0], dtype=np.float32)
+                # 估计目标点在相机坐标系下的位置
+                Z_cam = abs(self.vehicle_odometry.position[2])  # 目标物体距离
+                X_cam = (center_x - camera_matrix[0, 2]) / camera_matrix[0, 0] * Z_cam
+                Y_cam = (center_y - camera_matrix[1, 2]) / camera_matrix[1, 1] * Z_cam
+
+                # 相机坐标系到FRD坐标系的转换
+                tvec_cam = np.array([X_cam, Y_cam, Z_cam], dtype=np.float32)
+                tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
+
                 tvec_ned = np.matmul(R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
 
                 pos_x = tvec_ned[0]
                 pos_y = tvec_ned[1]
                 pos_z = tvec_ned[2]
 
-                self.previous_x_global = self.vehicle_odometry.position[0]
-                self.previous_y_global = self.vehicle_odometry.position[1]
-                self.previous_z_global = self.vehicle_odometry.position[2]
+                self.previous_x_global = pos_x
+                self.previous_y_global = pos_y
+                self.previous_z_global = pos_z
 
                 self.last_detection_timestamp = self.get_clock().now().to_msg()
                 msg.last_detection_timestamp = self.last_detection_timestamp
 
                 msg.detected = True
-                msg.x_global = float(self.vehicle_odometry.position[0] + center_x)
-                msg.y_global = float(self.vehicle_odometry.position[1])
-                msg.z_global = float(self.vehicle_odometry.position[2])
+                msg.x_global = float(pos_x)
+                msg.y_global = float(pos_y)
+                msg.z_global = float(pos_z)
                 msg.x_picture = float(center_y)
                 msg.y_picture = float(center_x)
                 msg.yaw = float(yaw)
