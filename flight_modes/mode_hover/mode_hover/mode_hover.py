@@ -49,9 +49,9 @@ class ModeHover(Node):
         
         self.AR_subsciber_ = self.create_subscription(tucan_msgs.ARMarker, "/cv_aruco_detection", self.AR_callback, 10)
         
-        self.ar_desired_x = 0.
-        self.ar_desired_y = 0.
-        self.ar_desired_z = 0.
+        self.ar_x = 0.
+        self.ar_y = 0.
+        self.ar_z = 0.
 
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
         
@@ -83,7 +83,12 @@ class ModeHover(Node):
                 self.is_active = True
                 self.publish_mode_status()
                 self.get_logger().info(f'Takeoff mode started')
+
+                if self.desired_yaw is None:
+                    self.desired_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
         else:
+            if self.is_active:
+                self.desired_yaw = None
             self.is_active = False
         
     def AR_callback(self, msg):
@@ -93,15 +98,12 @@ class ModeHover(Node):
                 if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                     # offsets are between -0.5 and 0.5 and flipped to the FRD frame
                     self.get_logger().info(f'AR marker detected with ID {msg.id}')
-                    self.get_logger().info(f'Flying to x: {self.ar_desired_x}, y: {self.ar_desired_y}, z: {self.ar_desired_z}')
-                    self.ar_desired_x = msg.x_global
-                    self.ar_desired_y = msg.y_global
-                    self.ar_desired_z = msg.z_global
+                    self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                    self.ar_x = msg.x_global
+                    self.ar_y = msg.y_global
+                    self.ar_z = msg.z_global
                     self.publish_trajectory_setpoint()
-            elif self.desired_ar_id is None:
-                time1 = Time.from_msg(msg.last_detection_timestamp)
-                time2 = self.get_clock().now()
-
+            elif msg.id != 0: # ie an ar marker has been preiously found
                 time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
 
                 # Convert the result (which is an rclpy.duration.Duration object) to seconds
@@ -111,10 +113,10 @@ class ModeHover(Node):
 
                 if time_difference_seconds < self.last_ar_time_tolerance:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                        self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_desired_x}, y: {self.ar_desired_y}, z: {self.ar_desired_z}')
-                        self.ar_desired_x = msg.x_global
-                        self.ar_desired_y = msg.y_global
-                        self.ar_desired_z = msg.z_global
+                        self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                        self.ar_x = msg.x_global
+                        self.ar_y = msg.y_global
+                        self.ar_z = msg.z_global
                         self.publish_trajectory_setpoint()
 
             self.publish_mode_status()
@@ -135,14 +137,9 @@ class ModeHover(Node):
     def publish_trajectory_setpoint(self):
         msg = px4_msgs.TrajectorySetpoint()
 
-        current_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
-
-        cos_yaw = math.cos(current_yaw)
-        sin_yaw = math.sin(current_yaw)
-
-        x_desired = self.ar_desired_x
-        y_desired = self.ar_desired_y
-        z_desired = self.ar_desired_z - self.desired_alt
+        x_desired = self.ar_x
+        y_desired = self.ar_y
+        z_desired = self.ar_z - self.desired_alt
 
         msg.position = [float(x_desired), float(y_desired), float(z_desired)]
         self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
