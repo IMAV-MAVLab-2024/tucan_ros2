@@ -41,7 +41,7 @@ class MissionDirector(Node):
         match self.__state:
             case 'start':
                 self.get_logger().info(f'Switching to hover mode')
-                self.__state = 'hover'
+                self.__state = 'takeoff'
                 
             case 'takeoff':
                 self.currently_active_mode_id = Mode.TAKEOFF
@@ -61,7 +61,7 @@ class MissionDirector(Node):
 
 
             case 'land':      
-                self.pre.land_ar_id_pub(std_msgs.Int32(data=302))
+                self.land_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
         
         if self.currently_active_mode_id is not None:
@@ -75,7 +75,7 @@ class MissionDirector(Node):
     def __publish_state(self):
         """Publish the current state to the mission_state topic
         """
-        msg = String()
+        msg = std_msgs.String()
         msg.data = self.__state
         self.state_publisher.publish(msg)
     

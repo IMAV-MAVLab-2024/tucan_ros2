@@ -33,7 +33,7 @@ R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
                     [1,  0,  0],
                     [0,  0,  1]], dtype=np.float32)
 
-t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
+t_frd_cam = np.array([-0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
 
 class MarkerDetector(Node):

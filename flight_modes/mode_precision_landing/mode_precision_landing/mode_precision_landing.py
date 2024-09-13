@@ -61,7 +61,7 @@ class ModePrecisionLanding(Node):
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
         
         # settings
-        self.landing_speed_gain = 0.1 # m, how far the position setpoint should be from the current position of the drone, translates proportionally to landing speed
+        self.landing_speed_gain = 0.065 # m, how far the position setpoint should be from the current position of the drone, translates proportionally to landing speed
 
         self.desired_yaw = 0.0 # rad
         self.desired_ar_id = None
@@ -102,6 +102,8 @@ class ModePrecisionLanding(Node):
     def AR_callback(self, msg):
         # Update the 
         if self.is_active:
+            trajectory_set = False
+
             if msg.detected:
                 if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                     # offsets are between -0.5 and 0.5 and flipped to the FRD frame
@@ -110,6 +112,7 @@ class ModePrecisionLanding(Node):
                     self.ar_x = msg.x_global
                     self.ar_y = msg.y_global
                     self.ar_z = msg.z_global
+                    trajectory_set = True
                     self.publish_trajectory_setpoint()
             elif msg.id != 0: # ie an ar marker has been preiously found
                 time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
@@ -125,9 +128,13 @@ class ModePrecisionLanding(Node):
                         self.ar_x = msg.x_global
                         self.ar_y = msg.y_global
                         self.ar_z = msg.z_global
-                
-                        self.publish_trajectory_setpoint()
 
+                        trajectory_set = True
+                        self.publish_trajectory_setpoint()
+            
+            if self.landing_started and not trajectory_set:
+                self.publish_trajectory_setpoint()
+                    
             self.publish_mode_status()
             self.publish_offboard_position_mode()
 
@@ -152,12 +159,12 @@ class ModePrecisionLanding(Node):
             distance = (self.ar_x - self.vehicle_odom_.position[0]) ** 2 + (self.ar_y - self.vehicle_odom_.position[1]) ** 2
             if distance < self.landing_tolerance_sq:
                 self.landing_started = True
-                self.get_logger.info('Starting landing')
+                self.get_logger().info('ar marker reached, Starting landing')
 
         if self.landing_started:
             x_desired = self.ar_x
             y_desired = self.ar_y
-            z_desired = self.vehicle_odom_.position[1] + self.self.landing_speed_gain
+            z_desired = self.vehicle_odom_.position[1] + self.landing_speed_gain
         else:
             x_desired = self.ar_x
             y_desired = self.ar_y

@@ -59,8 +59,8 @@ class ModeHover(Node):
         self.forward_pos_gain = 0.2
         self.sideways_pos_gain = 0.2
 
-        self.desired_yaw = 0.0 # rad
-        self.desired_alt = 1.0 # m
+        self.desired_yaw = None # rad
+        self.desired_alt = 1.2 # m
         self.desired_ar_id = None
 
         self.vehicle_odom_position_ = None
@@ -97,8 +97,8 @@ class ModeHover(Node):
             if msg.detected:
                 if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                     # offsets are between -0.5 and 0.5 and flipped to the FRD frame
-                    self.get_logger().info(f'AR marker detected with ID {msg.id}')
-                    self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                    #self.get_logger().info(f'AR marker detected with ID {msg.id}')
+                    #self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                     self.ar_x = msg.x_global
                     self.ar_y = msg.y_global
                     self.ar_z = msg.z_global
@@ -109,11 +109,11 @@ class ModeHover(Node):
                 # Convert the result (which is an rclpy.duration.Duration object) to seconds
                 time_difference_seconds = time_difference.nanoseconds * 1e-9
 
-                self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
+                #self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
 
                 if time_difference_seconds < self.last_ar_time_tolerance:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                        self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                        #self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                         self.ar_x = msg.x_global
                         self.ar_y = msg.y_global
                         self.ar_z = msg.z_global
@@ -142,7 +142,7 @@ class ModeHover(Node):
         z_desired = self.ar_z - self.desired_alt
 
         msg.position = [float(x_desired), float(y_desired), float(z_desired)]
-        self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
+        #self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
         msg.yaw = self.desired_yaw
         self.setpoint_publisher_.publish(msg)
     

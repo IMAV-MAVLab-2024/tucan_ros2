@@ -52,6 +52,10 @@ def generate_launch_description():
         package='mode_hover',
         executable='mode_hover',
     )
+    landing_node = Node(
+        package='mode_precision_landing',
+        executable='mode_precision_landing',
+    )
     # land_node = Node(
     #     package='mode_precision_landing',
     #     executable='mode_precision_landing',
@@ -82,6 +86,7 @@ def generate_launch_description():
     ld.add_action(idle_node)
     ld.add_action(takeoff_node)
     ld.add_action(hover_node)
+    ld.add_action(landing_node)
     # ld.add_action(land_node)
     
     ld.add_action(mission_director)
