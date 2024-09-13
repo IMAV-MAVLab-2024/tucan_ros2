@@ -37,6 +37,14 @@ private:
 	float lateral_vel;			   	// Lateral velocity in m/s 
 	float yaw_reference;			// Yaw reference in radians
 
+	// Liming
+	float x_picture;
+	float y_picture;
+	float z_global;
+	float x_global;
+	float y_global;
+	
+
 	const float K_lateral = 1.0;
 	const float K_yaw = 0.1;
 
