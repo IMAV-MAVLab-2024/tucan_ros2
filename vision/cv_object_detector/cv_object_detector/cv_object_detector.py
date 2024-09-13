@@ -36,7 +36,7 @@ class CylinderDetector(Node):
             depth=1
         )
 
-        self.vehicle_odometry = self.create_subscription(
+        self.vehicle_odometry_sub = self.create_subscription(
             VehicleOdometry, '/fmu/out/vehicle_odometry', self.vehicle_odometry_callback, qos_profile)
 
         self.bridge_for_CV = CvBridge()

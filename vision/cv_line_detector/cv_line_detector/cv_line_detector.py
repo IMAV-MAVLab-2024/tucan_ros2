@@ -1,29 +1,31 @@
 #! /usr/bin/env python3
-#OPENCV
+# OPENCV
 import numpy as np
 import cv2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
-from tucan_msgs.msg import LineFollower # Define this message type if it doesn't exist yet
+from px4_msgs.msg import VehicleOdometry
+from tucan_msgs.msg import LineFollower
 
-# Camera calibration parameters
+# 相机校准参数
 camera_matrix = np.array([[528.673438813997, 0, 362.958493066534],
                           [0, 569.793218233108, 283.723935140803],
                           [0, 0, 1]])
-
 dist_coeffs = np.array([0.138739907567143, -0.272661915942306, 0, 0, 0])
 
-# Known line width in meters
-line_width = 0.019  # 19mm
+# 相机到机体坐标系的旋转矩阵和位移向量
+R_frd_cam = np.array([[0, -1,  0],  # 从相机坐标系到机体坐标系的旋转矩阵
+                      [1,  0,  0],
+                      [0,  0,  1]], dtype=np.float32)
+t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32)  # 位移向量
 
-class LineTracker(Node):
+class LineDetector(Node):
     def __init__(self):
-        super().__init__("cv_line_tracker")
-        self.get_logger().info("CV Line Tracker Node has been started")
+        super().__init__("cv_line_detector")
+        self.get_logger().info("CV Line Detection Node has been started")
 
         # Configure QoS profile for publishing and subscribing
         qos_profile = QoSProfile(
@@ -33,66 +35,80 @@ class LineTracker(Node):
             depth=1
         )
 
-        # Create publisher
-        self.line_detection_publisher = self.create_publisher(LineFollower, "/cv_line_detection", 1)
+        # Create subscribers and publishers
+        self.vehicle_odometry_sub = self.create_subscription(
+            VehicleOdometry, '/fmu/out/vehicle_odometry', self.vehicle_odometry_callback, qos_profile)
+        self.line_detection_publisher = self.create_publisher(LineFollower, "/cv_line_detection", qos_profile)
         self.bridge_for_CV = CvBridge()
-        self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, 1)
+        self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, qos_profile)
+
+        # 记录之前的状态
+        self.previous_x = 0
+        self.previous_y = 0
+        self.vehicle_odometry = None
+
+    def vehicle_odometry_callback(self, msg):
+        """Callback function for vehicle_odometry topic subscriber."""
+        self.vehicle_odometry = msg
 
     def ImageLoop(self, data):
-        msg = LineFollower()
         img = self.bridge_for_CV.imgmsg_to_cv2(data)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        blue_lower = np.array([100, 50, 50])
+        blue_upper = np.array([130, 255, 255])
+        hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        blue_mask = cv2.inRange(hsv_img, blue_lower, blue_upper)
+        edges = cv2.Canny(blue_mask, 50, 150)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 50, minLineLength=50, maxLineGap=10)
 
-        # Define the range for the color blue
-        lower_blue = np.array([100, 150, 0])
-        upper_blue = np.array([140, 255, 255])
-        mask = cv2.inRange(hsv, lower_blue, upper_blue)
-
-        # Find edges in the mask using Canny
-        edges = cv2.Canny(mask, 50, 150, apertureSize=3)
-
-        # Find lines in the image using Hough Line Transform
-        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=50, maxLineGap=10)
-
-        if lines is not None:
-            line_angles = []
-            line_offsets = []
-            height, width = img.shape[:2]
-            middle_x = width / 2
-
+        if lines is not None and self.vehicle_odometry is not None:
+            line_centers = []
             for line in lines:
                 x1, y1, x2, y2 = line[0]
-                angle = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
-                line_angles.append(angle)
+                center_x = (x1 + x2) / 2
+                center_y = (y1 + y2) / 2
+                line_centers.append((center_x, center_y))
 
-                # Calculate the average position of the line
-                line_center_x = (x1 + x2) / 2
-                offset = line_center_x - middle_x
-                line_offsets.append(offset)
+            if len(line_centers) > 0:
+                avg_x, avg_y = np.mean(line_centers, axis=0)
 
-                # Draw lines on the image for visualization
-                cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # 计算目标点在相机坐标系中的位置
+                # 这里我们假设z_cam为0
+                x_cam = (avg_x - camera_matrix[0, 2]) / camera_matrix[0, 0]
+                y_cam = (avg_y - camera_matrix[1, 2]) / camera_matrix[1, 1]
+                z_cam = 0
 
-            if line_angles and line_offsets:
-                avg_angle = np.mean(line_angles)
-                avg_offset = np.mean(line_offsets)
-                msg.angle = float(avg_angle)
-                msg.avg_offset = float(avg_offset)
+                # 从相机坐标系转换到机体坐标系
+                point_cam = np.array([x_cam, y_cam, z_cam])
+                point_frd = np.dot(R_frd_cam, point_cam) + t_frd_cam
 
+                # 从机体坐标系转换到NED坐标系
+                orientation = self.vehicle_odometry.q
+                R_body_to_ned = R.from_quat([orientation[1], orientation[2], orientation[3], orientation[0]]).as_matrix()
+                point_ned = np.matmul(R_body_to_ned, point_frd) + np.array([self.vehicle_odometry.position[0], 
+                                                                           self.vehicle_odometry.position[1], 
+                                                                           self.vehicle_odometry.position[2]])
+
+                msg = LineFollower()
+                msg.x = float(point_ned[0])
+                msg.y = float(point_ned[1])
+                msg.z = float(point_ned[2])
                 self.line_detection_publisher.publish(msg)
-                self.get_logger().debug(f"Publishing: Angle: {avg_angle:.2f} Offset: {avg_offset:.2f}")
+
+                self.get_logger().debug(f"Publishing: X: {msg.x}, Y: {msg.y}, Z: {msg.z}")
+
         else:
-            msg.angle = float('nan')
-            msg.avg_offset = float('nan')
+            msg = LineFollower()
+            msg.x = float(self.previous_x)
+            msg.y = float(self.previous_y)
+            msg.z = 0.0  # Default value
             self.line_detection_publisher.publish(msg)
-            self.get_logger().debug("No line detected")
+            self.get_logger().debug(f"Publishing: X: {msg.x}, Y: {msg.y}, Z: {msg.z}")
 
 def main():
     rclpy.init()
-
-    line_tracker_node = LineTracker()
+    line_detector_node = LineDetector()
     try:
-        rclpy.spin(line_tracker_node)
+        rclpy.spin(line_detector_node)
     except KeyboardInterrupt:
         print("Shutting Down")
     rclpy.shutdown()

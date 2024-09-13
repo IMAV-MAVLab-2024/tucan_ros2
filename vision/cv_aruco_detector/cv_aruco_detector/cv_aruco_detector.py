@@ -50,7 +50,7 @@ class MarkerDetector(Node):
         )
 
         # Create subscribers
-        self.vehicle_odometry = self.create_subscription(
+        self.vehicle_odometry_sub = self.create_subscription(
             VehicleOdometry, '/fmu/out/vehicle_odometry', self.vehicle_odometry_callback, qos_profile)
         # self.flight_mode_subscriber = self.create_subscription(Mode, '/mission_state', self.flight_mode_callback,1)
 
