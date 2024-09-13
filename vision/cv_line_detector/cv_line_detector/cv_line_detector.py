@@ -8,6 +8,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from px4_msgs.msg import VehicleOdometry, VehicleLocalPosition, VehicleStatus
 from tucan_msgs.msg import LineFollower, Mode
+from scipy.spatial.transform import Rotation as R
+import math
 
 camera_matrix = np.array([[528.673438813997, 0, 362.958493066534],
                           [0, 569.793218233108, 283.723935140803],
@@ -56,7 +58,7 @@ class LineTracker(Node):
 
     def ImageLoop(self, data):
         msg = LineFollower()
-        img = self.bridge_for_CV.imgmsg_to_cv2(data)
+        img = self.bridge_for_CV.imgmsg_to_cv2(data, 'bgr8')
 
         # Convert image to HSV
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -72,13 +74,11 @@ class LineTracker(Node):
             # Find the largest contour
             largest_contour = max(contours, key=cv2.contourArea)
             # Fit a line to the largest contour
-            rows, cols = img.shape[:2]
             [vx, vy, x, y] = cv2.fitLine(largest_contour, cv2.DIST_L2, 0, 0.01, 0.01)
 
             # Calculate line's angle
             yaw = np.arctan2(vy, vx)  # Angle in radians
            
-
             # Calculate the center of the detected line in the image
             center_x = np.mean([contours[:, 0, 0].min(), contours[:, 0, 0].max()])
             center_y = np.mean([contours[:, 0, 1].min(), contours[:, 0, 1].max()])
@@ -102,9 +102,6 @@ class LineTracker(Node):
                 pos_y = tvec_ned[1]
                 pos_z = tvec_ned[2]
 
-                self.previous_x_global = pos_x
-                self.previous_y_global = pos_y
-                self.previous_z_global = pos_z
 
                 self.last_detection_timestamp = self.get_clock().now().to_msg()
                 msg.last_detection_timestamp = self.last_detection_timestamp
@@ -115,26 +112,37 @@ class LineTracker(Node):
                 msg.z_global = float(pos_z)
                 msg.x_picture = float(center_y)
                 msg.y_picture = float(center_x)
-                msg.yaw = float(yaw)
+                msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
 
+                self.previous_yaw = msg.yaw
+                self.previous_x_global = pos_x
+                self.previous_y_global = pos_y
+                self.previous_z_global = pos_z
                 self.previous_x = msg.x_picture
                 self.previous_y = msg.y_picture
 
                 self.line_detection_publisher.publish(msg)
-                self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: True" % 
-                                (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
+                self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
+                                (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
         else:
             msg.detected = False
             msg.x_global = float(self.previous_x_global)
             msg.y_global = float(self.previous_y_global)
             msg.z_global = float(self.previous_z_global)
-            msg.yaw = self.previous_yaw  # Default yaw if no line detected
-            msg.x_picture = self.previous_y
-            msg.y_picture = self.previous_x
+            msg.yaw = float(self.previous_yaw)  # Default yaw if no line detected
+            msg.x_picture = float(self.previous_y)
+            msg.y_picture = float(self.previous_x)
             msg.last_detection_timestamp = self.last_detection_timestamp
             self.line_detection_publisher.publish(msg)
             self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: False" % 
                                 (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
+            
+    def quat_get_yaw(self, q):
+        q_w = q[0]
+        q_x = q[1]
+        q_y = q[2]
+        q_z = q[3]
+        return math.atan2(2.0 * (q_w * q_z + q_x * q_y), 1.0 - 2.0 * (q_y * q_y + q_z * q_z))
 
 def main():
     rclpy.init()

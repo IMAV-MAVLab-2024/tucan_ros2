@@ -1,12 +1,12 @@
 bool detected
 
-float32 x_picture # x position of the object in the image
-float32 y_picture # y position of the object in the image
+float32 x_picture       # x position of the center of the line in the image
+float32 y_picture       # x position of the center of the line in the image
 
-float32 x_global # x position of the object in the NED
-float32 y_global # y position of the object in the NED
-float32 z_global # z position of the object in the NED
-float32 yaw # yaw position of the object in the NED
+float32 x_global        # x position of the center of the line in NED
+float32 y_global        # y position of the center of the line in NED
+float32 z_global        # z position of the center of the line in NED
+float32 yaw             # yaw of the line in NED
 
 builtin_interfaces/Time last_detection_timestamp   # when the last detection of an aruco object happened, 
 
