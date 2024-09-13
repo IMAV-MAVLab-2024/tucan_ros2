@@ -20,18 +20,23 @@ from tucan_msgs.msg import ARMarker, Mode
 
 fx = 174.88  
 fy = 144.72  
-cx = 239.27  
-cy = 280.49  
+cx = 300  
+cy = 200  
 
-# 摄像头内参矩阵（假设已经通过标定获得）
-camera_matrix = np.array([[fx, 0, cx],
-                          [0, fy, cy],
-                          [0, 0, 1]])
-#dist_coeffs = np.zeros((4, 1))  # 假设没有畸变
-dist_coeffs = np.array([0.012228,-0.03170,-0.02041,0.01481,0.00599])
+camera_matrix = np.array([[438.41, 0, 302.8075],
+                    [0, 393.7, 197.4],
+                    [0, 0, 1]])
+
+dist_coeffs = np.zeros((4, 1))  # 假设没有畸变
 
 # ArUco 标记的真实尺寸（15cm）
 marker_size = 0.15  # 单位: 米
+
+R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
+             [1,  0,  0],
+             [0,  0,  1]], dtype=np.float32)
+
+t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
 
 class MarkerDetector(Node):
@@ -101,26 +106,31 @@ class MarkerDetector(Node):
             # loop over the detected ArUCo corners
             for (markerCorner, markerID) in zip(corners, ids):
 
-                rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size, camera_matrix, dist_coeffs)
+                rvec_cam, tvec_cam, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size, camera_matrix, dist_coeffs)
                 # extract the marker corners (which are always returned
                 # in top-left, top-right, bottom-right, and bottom-left
                 # order)
                 corners = markerCorner.reshape((4, 2))
                 (topLeft, topRight, bottomRight, bottomLeft) = corners
                 if len(rvec)>0:
+                    rvec_cam = rvec_cam[0][0]
+                    tvec_cam = tvec_cam[0][0]
 
-                    rvec = rvec[0][0]
-                    tvec = tvec[0][0]
+                    self.get_logger().info(f"tvec_cam: {tvec_cam}")
+
+                    tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
+
+                    self.get_logger().info(f"tvec_frd: {tvec_frd}")
                     
                     # rotate realtive vector to the NED frame from the body frame
-                    tvec_ned = np.dot(R.from_quat(self.vehicle_odometry.q).as_matrix(), tvec)
+                    tvec_ned= np.dot(R.from_quat(self.vehicle_odometry.q).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
+
+                    self.get_logger().info(f"tvec_frd: {tvec_frd}")
 
                     # NED frame position
-                    pos_x = tvec[0]
-                    #pos_x = self.vehicle_odometry.position[0] 
-                    pos_y = tvec[1]
-                    #pos_y = self.vehicle_odometry.position[1]
-                    pos_z = tvec[2]
+                    pos_x = tvec_ned[0]
+                    pos_y = tvec_ned[1]
+                    pos_z = tvec_ned[2]
                     self.previous_x_global = pos_x
                     self.previous_y_global = pos_y
                     self.previous_z_global = pos_z
