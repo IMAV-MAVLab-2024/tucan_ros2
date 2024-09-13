@@ -30,7 +30,7 @@ class ImageSaverNode(Node):
         self.get_logger().info('Received an image, saving...')
         
         # Convert the ROS Image message to OpenCV format
-        cv_image = self.bridge.imgmsg_to_cv2(msg, 'rgb8')
+        cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         
         # Determine the next free image name in the home directory
         home_directory = os.path.expanduser('~/cv_images')  # Path to the home directory
