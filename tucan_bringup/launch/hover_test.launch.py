@@ -22,8 +22,8 @@ def generate_launch_description():
             {"camera_id": 22},
             {"compress": False},
             {"FPS": 30},
-            {"frame_width": 600},
-            {"frame_height": 400},
+            {"frame_width": 720},
+            {"frame_height": 576},
             {"topic_name": "/down_camera_image"}
         ],
         name='down_cam_driver'

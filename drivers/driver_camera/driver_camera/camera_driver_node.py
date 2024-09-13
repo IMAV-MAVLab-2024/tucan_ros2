@@ -44,6 +44,12 @@ class DriverCamera(Node):
             self.get_logger().error('Failed to set FPS')
         if not self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1):
             self.get_logger().error('Failed to set buffer size')
+        if not self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('N', 'V', '1', '2')):
+            self.get_logger().error('Failed to set fourcc code')
+        self.get_logger().error(f"fourcc {self.cap.get(cv2.CAP_PROP_CODEC_PIXEL_FORMAT)}")
+
+
+            
 
         if self.compress:
             self.image_publisher = self.create_publisher(CompressedImage, self.topic_name, 1)
