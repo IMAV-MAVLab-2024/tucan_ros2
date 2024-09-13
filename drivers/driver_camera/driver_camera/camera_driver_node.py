@@ -80,8 +80,10 @@ class DriverCamera(Node):
                 else:
                     self.get_logger().error('Failed to compress image')
             else:
+                msg = self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="passthrough")
+                msg.encoding = "rgb8"
                 #self.get_logger().debug('Publishing uncompressed image')
-                self.image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(frame, encoding="rgb8"))
+                self.image_publisher.publish(msg)
             
 def main():
     rclpy.init()
