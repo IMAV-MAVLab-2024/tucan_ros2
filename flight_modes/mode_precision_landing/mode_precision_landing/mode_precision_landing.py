@@ -148,7 +148,7 @@ class ModePrecisionLanding(Node):
         self.desired_alt = msg.data
 
     def desired_id_callback(self, msg):
-        self.desired_id = msg.data
+        self.desired_ar_id = msg.data
 
     def publish_trajectory_setpoint(self):
         msg = px4_msgs.TrajectorySetpoint()
