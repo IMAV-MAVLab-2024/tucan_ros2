@@ -109,16 +109,13 @@ class ModeHover(Node):
 
                 self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
 
-                if self.last_ar_time_tolerance < time_difference_seconds:
+                if time_difference_seconds < self.last_ar_time_tolerance:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                         self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_desired_x}, y: {self.ar_desired_y}, z: {self.ar_desired_z}')
                         self.ar_desired_x = msg.x_global
                         self.ar_desired_y = msg.y_global
                         self.ar_desired_z = msg.z_global
                         self.publish_trajectory_setpoint()
-
-                self.publish_trajectory_setpoint()
-
 
             self.publish_mode_status()
             self.publish_offboard_position_mode()
