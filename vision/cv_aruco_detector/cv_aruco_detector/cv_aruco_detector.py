@@ -24,14 +24,14 @@ camera_matrix = np.array([[528.673438813997, 0, 362.958493066534],
                           [0, 569.793218233108, 283.723935140803],
                           [0, 0, 1]])
 
-dist_coeffs = np.zeros((0.138739907567143, -0.272661915942306, 0, 0, 0))
+dist_coeffs = np.array([0.138739907567143, -0.272661915942306, 0, 0, 0])
 
 # ArUco 标记的真实尺寸（15cm）
-marker_size = 0.15  # 单位: 米
+marker_size = 0.1  # 单位: 米
 
 R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
-             [1,  0,  0],
-             [0,  0,  1]], dtype=np.float32)
+                    [1,  0,  0],
+                    [0,  0,  1]], dtype=np.float32)
 
 t_frd_cam = np.array([0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
@@ -72,7 +72,7 @@ class MarkerDetector(Node):
         self.vehicle_odometry = None
         # self.roll, self.pitch, self.yaw = 0.0, 0.0, 0.0
 
-        self.last_detection_timestamp = 0
+        self.last_detection_timestamp = self.get_clock().now().to_msg()
 
         # the aruco recodring positions
         self.aruco_positions = {}
@@ -111,20 +111,14 @@ class MarkerDetector(Node):
                 # order)
                 corners = markerCorner.reshape((4, 2))
                 (topLeft, topRight, bottomRight, bottomLeft) = corners
-                if len(rvec)>0:
+                if len(rvec_cam)>0:
                     rvec_cam = rvec_cam[0][0]
                     tvec_cam = tvec_cam[0][0]
 
-                    self.get_logger().info(f"tvec_cam: {tvec_cam}")
-
                     tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
-
-                    self.get_logger().info(f"tvec_frd: {tvec_frd}")
                     
                     # rotate realtive vector to the NED frame from the body frame
-                    tvec_ned= np.dot(R.from_quat(self.vehicle_odometry.q).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
-
-                    self.get_logger().info(f"tvec_frd: {tvec_frd}")
+                    tvec_ned = np.matmul(R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
 
                     # NED frame position
                     pos_x = tvec_ned[0]
@@ -134,7 +128,7 @@ class MarkerDetector(Node):
                     self.previous_y_global = pos_y
                     self.previous_z_global = pos_z
 
-                    self.last_detection_timestamp = node.get_clock().now().to_msg()
+                    self.last_detection_timestamp = self.get_clock().now().to_msg()
                     msg.last_detection_timestamp = self.last_detection_timestamp
                     
                 # compute and draw the center (x, y)-coordinates of the
@@ -163,7 +157,7 @@ class MarkerDetector(Node):
 
                 self.previous_id = msg.id
                 self.ar_detection_publisher.publish(msg)
-                self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
+                self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
                                 (msg.id, msg.x, msg.y, msg.detected))
                                   
         else:
@@ -176,7 +170,7 @@ class MarkerDetector(Node):
             msg.z_global = float(self.previous_z_global)
             msg.last_detection_timestamp = self.last_detection_timestamp
             self.ar_detection_publisher.publish(msg)
-            self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
+            self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
                                 (msg.id, msg.x, msg.y, msg.detected))
 
         # self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d" % (msg.id, msg.x, msg.y))

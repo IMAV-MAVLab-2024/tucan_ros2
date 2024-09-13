@@ -78,9 +78,11 @@ class ModeHover(Node):
         
     def state_callback(self, msg):
         # Activate node if mission state is idle
-        if msg.mode_id == self.mode and self.is_active == False:
-            self.is_active = True
-            self.publish_mode_status()
+        if msg.mode_id == self.mode:
+            if self.is_active == False:
+                self.is_active = True
+                self.publish_mode_status()
+                self.get_logger().info(f'Takeoff mode started')
         else:
             self.is_active = False
         
@@ -97,13 +99,13 @@ class ModeHover(Node):
                     self.ar_desired_z = msg.z_global
                     self.publish_trajectory_setpoint()
             elif self.desired_ar_id is None:
-                time1 = Time.from_msg(header_stamp1)
-                time2 = node.get_clock().now()
+                time1 = Time.from_msg(msg.last_detection_timestamp)
+                time2 = self.get_clock().now()
 
-                time_difference = node.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
+                time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
 
                 # Convert the result (which is an rclpy.duration.Duration object) to seconds
-                time_difference_seconds = time_difference.seconds_nanoseconds()[0] + time_difference.seconds_nanoseconds()[1] * 1e-9
+                time_difference_seconds = time_difference.nanoseconds * 1e-9
 
                 self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
 
