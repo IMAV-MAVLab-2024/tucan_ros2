@@ -72,6 +72,8 @@ class MarkerDetector(Node):
         self.vehicle_odometry = None
         # self.roll, self.pitch, self.yaw = 0.0, 0.0, 0.0
 
+        self.last_detection_timestamp = 0
+
         # the aruco recodring positions
         self.aruco_positions = {}
 
@@ -131,6 +133,9 @@ class MarkerDetector(Node):
                     self.previous_x_global = pos_x
                     self.previous_y_global = pos_y
                     self.previous_z_global = pos_z
+
+                    self.last_detection_timestamp = node.get_clock().now().to_msg()
+                    msg.last_detection_timestamp = self.last_detection_timestamp
                     
                 # compute and draw the center (x, y)-coordinates of the
                 # ArUco marker
@@ -153,7 +158,6 @@ class MarkerDetector(Node):
                 msg.x_global = float(pos_x)  # ned
                 msg.y_global = float(pos_y)  # ned
                 msg.z_global = float(pos_z)  # ned
-                self.get_logger().info("test -te s-----???")
 
                 self.aruco_positions[markerID] = (pos_x, pos_y, pos_z)
 
@@ -170,6 +174,7 @@ class MarkerDetector(Node):
             msg.x_global = float(self.previous_x_global)
             msg.y_global = float(self.previous_y_global)
             msg.z_global = float(self.previous_z_global)
+            msg.last_detection_timestamp = self.last_detection_timestamp
             self.ar_detection_publisher.publish(msg)
             self.get_logger().info("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 
                                 (msg.id, msg.x, msg.y, msg.detected))

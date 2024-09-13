@@ -11,6 +11,9 @@ from rclpy.qos import HistoryPolicy
 from rclpy.qos import ReliabilityPolicy
 import tucan_msgs.msg as tucan_msgs
 
+from rclpy.time import Time
+from builtin_interfaces.msg import Time as HeaderTime
+
 import std_msgs.msg as std_msgs
 
 class ModeHover(Node):
@@ -46,14 +49,15 @@ class ModeHover(Node):
         
         self.AR_subsciber_ = self.create_subscription(tucan_msgs.ARMarker, "/cv_aruco_detection", self.AR_callback, 10)
         
-        self.AR_x_offset = 0.
-        self.AR_y_offset = 0.
+        self.ar_desired_x = 0.
+        self.ar_desired_y = 0.
+        self.ar_desired_z = 0.
+
+        self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
         
         # settings
         self.forward_pos_gain = 0.2
         self.sideways_pos_gain = 0.2
-        self.x_px = 600
-        self.y_px = 400
 
         self.desired_yaw = 0.0 # rad
         self.desired_alt = 1.0 # m
@@ -84,14 +88,38 @@ class ModeHover(Node):
         # Update the 
         if self.is_active:
             if msg.detected:
-                # offsets are between -0.5 and 0.5 and flipped to the FRD frame
-                self.AR_y_offset = float(msg.y)/self.y_px - 0.5
-                self.AR_x_offset = float(msg.x)/self.x_px - 0.5   
-            else:
-                self.AR_x_offset = 0.
-                self.AR_y_offset = 0.
-            
-            self.publish_trajectory_setpoint()
+                if self.desired_ar_id is None or self.desired_ar_id == msg.id:
+                    # offsets are between -0.5 and 0.5 and flipped to the FRD frame
+                    self.get_logger().info(f'AR marker detected with ID {msg.id}')
+                    self.get_logger().info(f'Flying to x: {self.ar_desired_x}, y: {self.ar_desired_y}, z: {self.ar_desired_z}')
+                    self.ar_desired_x = msg.x_global
+                    self.ar_desired_y = msg.y_global
+                    self.ar_desired_z = msg.z_global
+                    self.publish_trajectory_setpoint()
+            elif self.desired_ar_id is None:
+                self.last_detection_time_age = 
+
+                time1 = Time.from_msg(header_stamp1)
+                time2 = node.get_clock().now()
+
+                time_difference = node.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
+
+                # Convert the result (which is an rclpy.duration.Duration object) to seconds
+                time_difference_seconds = time_difference.seconds_nanoseconds()[0] + time_difference.seconds_nanoseconds()[1] * 1e-9
+
+                self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
+
+                if self.last_ar_time_tolerance < time_difference_seconds:
+                    if self.desired_ar_id is None or self.desired_ar_id == msg.id:
+                        self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_desired_x}, y: {self.ar_desired_y}, z: {self.ar_desired_z}')
+                        self.ar_desired_x = msg.x_global
+                        self.ar_desired_y = msg.y_global
+                        self.ar_desired_z = msg.z_global
+                        self.publish_trajectory_setpoint()
+
+                self.publish_trajectory_setpoint()
+
+
             self.publish_mode_status()
             self.publish_offboard_position_mode()
 
@@ -115,11 +143,12 @@ class ModeHover(Node):
         cos_yaw = math.cos(current_yaw)
         sin_yaw = math.sin(current_yaw)
 
-        forward_pos = self.vehicle_odom_.position[0] + self.forward_pos_gain * self.AR_x_offset * cos_yaw - self.sideways_pos_gain * self.AR_y_offset * sin_yaw
-        sideways_pos = self.vehicle_odom_.position[1] + self.forward_pos_gain * self.AR_x_offset * sin_yaw + self.sideways_pos_gain * self.AR_y_offset * cos_yaw
+        x_desired = self.ar_desired_x
+        y_desired = self.ar_desired_y
+        z_desired = self.ar_desired_z - self.desired_alt
 
-        msg.position = [float(forward_pos), float(sideways_pos), float(self.desired_alt)]
-        self.get_logger().info(f'Forward offset {self.forward_pos_gain * self.AR_x_offset}; Sideways offset {self.sideways_pos_gain * self.AR_y_offset}')
+        msg.position = [float(x_desired), float(y_desired), float(z_desired)]
+        self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
         msg.yaw = self.desired_yaw
         self.setpoint_publisher_.publish(msg)
     
