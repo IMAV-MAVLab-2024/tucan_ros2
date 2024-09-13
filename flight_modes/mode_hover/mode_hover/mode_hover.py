@@ -97,8 +97,6 @@ class ModeHover(Node):
                     self.ar_desired_z = msg.z_global
                     self.publish_trajectory_setpoint()
             elif self.desired_ar_id is None:
-                self.last_detection_time_age = 
-
                 time1 = Time.from_msg(header_stamp1)
                 time2 = node.get_clock().now()
 
