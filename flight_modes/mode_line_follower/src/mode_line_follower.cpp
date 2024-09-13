@@ -89,7 +89,8 @@ void ModeLineFollower::timer_callback(void)
 void ModeLineFollower::publish_setpoint()
 {
 	TrajectorySetpoint msg{};
-	msg.velocity = {forward_vel, lateral_vel, 0.0};
+	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
+	msg.position = {x_global, y_global, z_global};
 	msg.yaw = yaw_reference; // relative?
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	setpoint_publisher_->publish(msg);
@@ -135,9 +136,17 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
  */
 void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 {
-	line_angle = msg->angle;
-	lateral_vel = K_lateral * msg->avg_offset;
-	yaw_reference = K_yaw * msg->angle;
+	// line_angle = msg->angle;
+	// lateral_vel = K_lateral * msg->avg_offset;
+	// yaw_reference = K_yaw * msg->angle;
+	yaw_reference = msg->yaw;
+	x_picture = msg->x_picture;
+	y_picture = msg->y_picture;
+	z_global = msg->z_global;
+	x_global = msg->x_global;
+	y_global = msg->y_global;
+	
+
 }
 
 /**
