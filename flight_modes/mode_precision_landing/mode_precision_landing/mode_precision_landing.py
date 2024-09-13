@@ -36,8 +36,8 @@ class ModePrecisionLanding(Node):
         
         self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
-        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_yaw", self.desired_yaw_callback, 5)
-        self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_hover/desired_id", self.desired_id_callback, 5)
+        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_precision_landing/desired_yaw", self.desired_yaw_callback, 5)
+        self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_precision_landing/desired_id", self.desired_id_callback, 5)
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
