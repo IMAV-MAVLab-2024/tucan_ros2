@@ -18,16 +18,13 @@ import rclpy
 from rclpy.node import Node
 from tucan_msgs.msg import ARMarker, Mode
 
-fx = 174.88  
-fy = 144.72  
-cx = 300  
-cy = 200  
 
-camera_matrix = np.array([[438.41, 0, 302.8075],
-                    [0, 393.7, 197.4],
-                    [0, 0, 1]])
+## FF 82 degrees, WxH:720x576
+camera_matrix = np.array([[528.673438813997, 0, 362.958493066534],
+                          [0, 569.793218233108, 283.723935140803],
+                          [0, 0, 1]])
 
-dist_coeffs = np.zeros((4, 1))  # 假设没有畸变
+dist_coeffs = np.zeros((0.138739907567143, -0.272661915942306, 0, 0, 0))
 
 # ArUco 标记的真实尺寸（15cm）
 marker_size = 0.15  # 单位: 米
