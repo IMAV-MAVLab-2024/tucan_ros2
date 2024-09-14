@@ -29,6 +29,9 @@ class LineTracker(Node):
         super().__init__("cv_line_tracker")
         self.get_logger().info("CV Line Tracking Node has been started")
 
+        self.declare_parameter("debug", False)
+        self.debug = self.get_parameter("debug").value
+
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -43,6 +46,11 @@ class LineTracker(Node):
         self.bridge_for_CV = CvBridge()
         self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, 1)
         self.subscription_enable = self.create_subscription(std_msgs.Bool, "/cv_line_detector/enable", self.enable_callback, 1)
+
+        #debug image publisher
+        if self.debug:
+            self.debug_image_publisher = self.create_publisher(Image, "/cv_line_detector/debug_image", 1)
+            self.debug_image_publisher_blue = self.create_publisher(Image, "/cv_line_detector/debug_image_blue", 1)
 
         self.enabled = False
 
@@ -72,6 +80,9 @@ class LineTracker(Node):
             lower_blue = np.array([100, 150, 0])
             upper_blue = np.array([140, 255, 255])
             mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+            if self.debug:
+                self.debug_image_publisher_blue.publish(self.bridge_for_CV.cv2_to_imgmsg(mask, 'mono8'))
             
             # Find contours in the mask
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -82,8 +93,19 @@ class LineTracker(Node):
                 # Fit a line to the largest contour
                 [vx, vy, x, y] = cv2.fitLine(largest_contour, cv2.DIST_L2, 0, 0.01, 0.01)
 
+                #draw the line
+                if self.debug:
+                    cv2.line(img, (int(x - 1000 * vx), int(y - 1000 * vy)), (int(x + 1000 * vx), int(y + 1000 * vy)), (0, 255, 0), 2)
+                    self.debug_image_publisher.publish(self.bridge_for_CV.cv2_to_imgmsg(img, 'bgr8'))
+
+
                 # Calculate line's angle
-                yaw = np.arctan2(vy, vx) + np.pi / 2  # Angle in radians
+                yaw = np.arctan2(-vx, vy) # Angle in radians
+
+                if yaw > np.pi / 2:
+                    yaw = yaw - np.pi
+                elif yaw < -np.pi / 2:
+                    yaw = yaw + np.pi
             
                 # Calculate the center of the detected line in the image
                 center_x = np.mean([largest_contour[:, 0, 0].min(), largest_contour[:, 0, 0].max()])
@@ -113,7 +135,7 @@ class LineTracker(Node):
                     msg.y_offset_dir = float(lateral_offset_ned[1])
                     msg.x_picture = float(center_y)
                     msg.y_picture = float(center_x)
-                    msg.yaw = float(yaw + yaw_vehicle)
+                    msg.yaw = float(-yaw + yaw_vehicle)
 
                     self.previous_yaw = msg.yaw
                     self.previous_x_global = msg.x_offset_dir
