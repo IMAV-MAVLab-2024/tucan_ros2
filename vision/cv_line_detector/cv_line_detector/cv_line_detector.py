@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+import std_msgs.msg as std_msgs
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -41,6 +42,9 @@ class LineTracker(Node):
         self.line_detection_publisher = self.create_publisher(LineFollower, "/cv_line_detection", 1)
         self.bridge_for_CV = CvBridge()
         self.subscription = self.create_subscription(Image, "/down_camera_image", self.ImageLoop, 1)
+        self.subscription_enable = self.create_subscription(std_msgs.Bool, "/cv_line_detector/enable", self.enable_callback, 1)
+
+        self.enabled = False
 
         self.previous_x = 0
         self.previous_y = 0
@@ -57,92 +61,119 @@ class LineTracker(Node):
         self.vehicle_odometry = msg
 
     def ImageLoop(self, data):
-        msg = LineFollower()
-        img = self.bridge_for_CV.imgmsg_to_cv2(data, 'bgr8')
+        if self.enabled:
+            msg = LineFollower()
+            img = self.bridge_for_CV.imgmsg_to_cv2(data, 'bgr8')
 
-        # Convert image to HSV
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        # Define the color range for the blue color
-        lower_blue = np.array([100, 150, 0])
-        upper_blue = np.array([140, 255, 255])
-        mask = cv2.inRange(hsv, lower_blue, upper_blue)
-        
-        # Find contours in the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        if contours:
-            # Find the largest contour
-            largest_contour = max(contours, key=cv2.contourArea)
-            # Fit a line to the largest contour
-            [vx, vy, x, y] = cv2.fitLine(largest_contour, cv2.DIST_L2, 0, 0.01, 0.01)
-
-            # Calculate line's angle
-            yaw = np.arctan2(vy, vx)  # Angle in radians
-           
-            # Calculate the center of the detected line in the image
-            center_x = np.mean([contours[:, 0, 0].min(), contours[:, 0, 0].max()])
-            center_y = np.mean([contours[:, 0, 1].min(), contours[:, 0, 1].max()])
-
-            # Convert the line center to NED frame
-            if self.vehicle_odometry is not None:
-                # Convert line center from FRD to NED
-
-                # 估计目标点在相机坐标系下的位置
-                Z_cam = abs(self.vehicle_odometry.position[2])  # 目标物体距离
-                X_cam = (center_x - camera_matrix[0, 2]) / camera_matrix[0, 0] * Z_cam
-                Y_cam = (center_y - camera_matrix[1, 2]) / camera_matrix[1, 1] * Z_cam
-
-                # 相机坐标系到FRD坐标系的转换
-                tvec_cam = np.array([X_cam, Y_cam, Z_cam], dtype=np.float32)
-                tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
-
-                tvec_ned = np.matmul(R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
-
-                pos_x = tvec_ned[0]
-                pos_y = tvec_ned[1]
-                pos_z = tvec_ned[2]
-
-
-                self.last_detection_timestamp = self.get_clock().now().to_msg()
-                msg.last_detection_timestamp = self.last_detection_timestamp
-
-                msg.detected = True
-                msg.x_global = float(pos_x)
-                msg.y_global = float(pos_y)
-                msg.z_global = float(pos_z)
-                msg.x_picture = float(center_y)
-                msg.y_picture = float(center_x)
-                msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
-
-                self.previous_yaw = msg.yaw
-                self.previous_x_global = pos_x
-                self.previous_y_global = pos_y
-                self.previous_z_global = pos_z
-                self.previous_x = msg.x_picture
-                self.previous_y = msg.y_picture
-
-                self.line_detection_publisher.publish(msg)
-                self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
-                                (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
-        else:
-            msg.detected = False
-            msg.x_global = float(self.previous_x_global)
-            msg.y_global = float(self.previous_y_global)
-            msg.z_global = float(self.previous_z_global)
-            msg.yaw = float(self.previous_yaw)  # Default yaw if no line detected
-            msg.x_picture = float(self.previous_y)
-            msg.y_picture = float(self.previous_x)
-            msg.last_detection_timestamp = self.last_detection_timestamp
-            self.line_detection_publisher.publish(msg)
-            self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: False" % 
-                                (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
+            # Convert image to HSV
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            # Define the color range for the blue color
+            lower_blue = np.array([100, 150, 0])
+            upper_blue = np.array([140, 255, 255])
+            mask = cv2.inRange(hsv, lower_blue, upper_blue)
             
+            # Find contours in the mask
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find the largest contour
+                largest_contour = max(contours, key=cv2.contourArea)
+                # Fit a line to the largest contour
+                [vx, vy, x, y] = cv2.fitLine(largest_contour, cv2.DIST_L2, 0, 0.01, 0.01)
+
+                # Calculate line's angle
+                yaw = np.arctan2(vy, vx)  # Angle in radians
+            
+                # Calculate the center of the detected line in the image
+                center_x = np.mean([contours[:, 0, 0].min(), contours[:, 0, 0].max()])
+                center_y = np.mean([contours[:, 0, 1].min(), contours[:, 0, 1].max()])
+
+                # Convert the line center to NED frame
+                if self.vehicle_odometry is not None:
+                    # Convert line center from FRD to NED
+
+                    R_ned_frd = R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]])
+                    R_mat_ned_frd = R_ned_frd.as_matrix()
+                    #R_mat_frd_ned = R_ned_frd.inv().as_matrix()
+                    current_pos = np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
+
+                    # camera position in NED
+                    pos_cam_frd = t_frd_cam
+                    pos_cam_ned = np.matmul(R_mat_ned_frd, pos_cam_frd) + current_pos
+
+                    # point ray in NED
+                    center_ray_cam = self.image_point_to_3d_ray([center_x, center_y], camera_matrix, dist_coeffs)
+                    center_ray_frd = np.matmul(R_frd_cam, center_ray_cam) + t_frd_cam
+                    center_ray_ned = np.matmul(R_mat_ned_frd, center_ray_frd)
+
+                    # intersect the ray and the ground plane
+                    Z_ground = 0
+                    scale = (Z_ground - self.vehicle_odometry.position[2]) / center_ray_ned[2]
+                    X_ground = center_ray_ned[0] * scale
+                    Y_ground = center_ray_ned[1] * scale
+
+                    pos_x = X_ground
+                    pos_y = Y_ground
+                    pos_z = Z_ground
+
+                    self.last_detection_timestamp = self.get_clock().now().to_msg()
+                    msg.last_detection_timestamp = self.last_detection_timestamp
+
+                    msg.detected = True
+                    msg.x_global = float(pos_x)
+                    msg.y_global = float(pos_y)
+                    msg.z_global = float(pos_z)
+                    msg.x_picture = float(center_y)
+                    msg.y_picture = float(center_x)
+                    msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
+
+                    self.previous_yaw = msg.yaw
+                    self.previous_x_global = pos_x
+                    self.previous_y_global = pos_y
+                    self.previous_z_global = pos_z
+                    self.previous_x = msg.x_picture
+                    self.previous_y = msg.y_picture
+
+                    self.line_detection_publisher.publish(msg)
+                    self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
+                                    (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
+            else:
+                msg.detected = False
+                msg.x_global = float(self.previous_x_global)
+                msg.y_global = float(self.previous_y_global)
+                msg.z_global = float(self.previous_z_global)
+                msg.yaw = float(self.previous_yaw)  # Default yaw if no line detected
+                msg.x_picture = float(self.previous_y)
+                msg.y_picture = float(self.previous_x)
+                msg.last_detection_timestamp = self.last_detection_timestamp
+                self.line_detection_publisher.publish(msg)
+                self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: False" % 
+                                    (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
+
+    def image_point_to_3d_ray(self, image_point, camera_matrix, dist_coeffs):
+        # Convert the image point to normalized camera coordinates
+        image_point = np.array([image_point], dtype=np.float32).reshape(-1, 1, 2)
+        
+        # Undistort the point to remove lens distortion (if dist_coeffs are available)
+        undistorted_point = cv2.undistortPoints(image_point, camera_matrix, dist_coeffs, None, camera_matrix)
+        
+        # Get the normalized coordinates (x', y') from the undistorted points
+        normalized_point = undistorted_point[0][0]
+        
+        # The 3D ray direction (in camera coordinates) is assumed to have z = 1.0
+        ray = np.array([normalized_point[0], normalized_point[1], 1.0])
+    
+        return ray
+
     def quat_get_yaw(self, q):
         q_w = q[0]
         q_x = q[1]
         q_y = q[2]
         q_z = q[3]
         return math.atan2(2.0 * (q_w * q_z + q_x * q_y), 1.0 - 2.0 * (q_y * q_y + q_z * q_z))
+    
+    def enable_callback(self, msg):
+        self.enabled = msg.data
 
 def main():
     rclpy.init()
