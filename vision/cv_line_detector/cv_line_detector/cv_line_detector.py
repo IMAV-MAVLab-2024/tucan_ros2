@@ -85,8 +85,9 @@ class LineTracker(Node):
                 yaw = np.arctan2(vy, vx)  # Angle in radians
             
                 # Calculate the center of the detected line in the image
-                center_x = np.mean([contours[:, 0, 0].min(), contours[:, 0, 0].max()])
-                center_y = np.mean([contours[:, 0, 1].min(), contours[:, 0, 1].max()])
+                center_x = np.mean([largest_contour[:, 0, 0].min(), largest_contour[:, 0, 0].max()])
+                center_y = np.mean([largest_contour[:, 0, 1].min(), largest_contour[:, 0, 1].max()])
+
 
                 # Convert the line center to NED frame
                 if self.vehicle_odometry is not None:
@@ -103,7 +104,12 @@ class LineTracker(Node):
                     # point ray in NED
                     center_ray_cam = self.image_point_to_3d_ray([center_x, center_y], camera_matrix, dist_coeffs)
                     center_ray_frd = np.matmul(R_frd_cam, center_ray_cam) + t_frd_cam
-                    center_ray_ned = np.matmul(R_mat_ned_frd, center_ray_frd)
+                    center_ray_ned = np.matmul(R_mat_ned_frd, center_ray_frd) + pos_cam_ned
+
+                    #print ("center_ray_ned: ", center_ray_ned)
+                    self.get_logger().info("center_ray_cam: %.2f %.2f %.2f" % (center_ray_cam[0], center_ray_cam[1], center_ray_cam[2]))
+                    self.get_logger().info("center_ray_frd: %.2f %.2f %.2f" % (center_ray_frd[0], center_ray_frd[1], center_ray_frd[2]))
+                    self.get_logger().info("center_ray_ned: %.2f %.2f %.2f" % (center_ray_ned[0], center_ray_ned[1], center_ray_ned[2]))
 
                     # intersect the ray and the ground plane
                     Z_ground = 0
@@ -111,8 +117,9 @@ class LineTracker(Node):
                     if scale > 0:
                         X_ground = center_ray_ned[0] * scale
                         Y_ground = center_ray_ned[1] * scale
+
+                        self.get_logger().info("x and y realtive to current pos: %.2f %.2f" % (self.vehicle_odometry.position[0] - X_ground ,self.vehicle_odometry.position[1] - Y_ground))
                         
-                        pos_cam_ned
                         pos_x = X_ground
                         pos_y = Y_ground
                         pos_z = Z_ground
@@ -152,19 +159,19 @@ class LineTracker(Node):
                                     (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
 
     def image_point_to_3d_ray(self, image_point, camera_matrix, dist_coeffs):
-        # Convert the image point to normalized camera coordinates
-        image_point = np.array([image_point], dtype=np.float32).reshape(-1, 1, 2)
+        # Convert the 2D image point to homogeneous coordinates (x, y, 1)
+        homogeneous_image_point = np.array([image_point[0], image_point[1], 1.0], dtype=np.float32)
         
-        # Undistort the point to remove lens distortion (if dist_coeffs are available)
-        undistorted_point = cv2.undistortPoints(image_point, camera_matrix, dist_coeffs, None, camera_matrix)
+        # Compute the inverse of the camera matrix
+        camera_matrix_inv = np.linalg.inv(camera_matrix)
         
-        # Get the normalized coordinates (x', y') from the undistorted points
-        normalized_point = undistorted_point[0][0]
+        # Multiply the inverse of the camera matrix by the image point to get the ray direction
+        ray_direction = camera_matrix_inv.dot(homogeneous_image_point)
         
-        # The 3D ray direction (in camera coordinates) is assumed to have z = 1.0
-        ray = np.array([normalized_point[0], normalized_point[1], 1.0])
-    
-        return ray
+        # Normalize the ray direction vector (optional, for direction purposes)
+        ray_direction /= np.linalg.norm(ray_direction)
+        
+        return ray_direction
 
     def quat_get_yaw(self, q):
         q_w = q[0]

@@ -79,6 +79,7 @@ ModeLineFollower::ModeLineFollower() :
  */
 void ModeLineFollower::publish_setpoint()
 {
+	RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
 	msg.position = {x_global, y_global, z_global};
@@ -113,6 +114,11 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
 	{
 		if (mode_status_ == MODE_INACTIVE){
 			activate_node();
+		}else{
+			// activate the cv line detector
+			std_msgs::msg::Bool msg;
+			msg.data = true;
+			line_follower_activation_publisher_->publish(msg);
 		}
 	}else{
 		if (mode_status_ == MODE_ACTIVE){
@@ -192,7 +198,6 @@ void ModeLineFollower::activate_node()
 	std_msgs::msg::Bool msg;
 	msg.data = true;
 	line_follower_activation_publisher_->publish(msg);
-
 	mode_status_ = MODE_ACTIVE;
 	RCLCPP_INFO(this->get_logger(), "Mode line follower activated");
 }

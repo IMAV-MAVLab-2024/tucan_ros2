@@ -20,8 +20,8 @@ class ModePrecisionLanding(Node):
     """Flight mode for landing on an AR marker
     """
     def __init__(self):
-        super().__init__('mode_hover')
-        self.get_logger().info('ModeHover initialized')
+        super().__init__('mode_precision_landing')
+        self.get_logger().info('Mode precision landing initialized')
         self.mode = tucan_msgs.Mode.PRECISION_LANDING
         self.__frequency = 10 # Frequency in Hz
 
@@ -195,11 +195,11 @@ class ModePrecisionLanding(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    mode_hover = ModePrecisionLanding()
+    mode_land = ModePrecisionLanding()
 
-    rclpy.spin(mode_hover)
+    rclpy.spin(mode_land)
 
-    mode_hover.destroy_node()
+    mode_land.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
