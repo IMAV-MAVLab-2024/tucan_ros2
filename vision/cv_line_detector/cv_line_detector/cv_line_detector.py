@@ -51,7 +51,6 @@ class LineTracker(Node):
         self.previous_yaw = 0
         self.previous_x_global = 0
         self.previous_y_global = 0
-        self.previous_z_global = 0
 
         self.vehicle_odometry = None
 
@@ -82,7 +81,7 @@ class LineTracker(Node):
                 [vx, vy, x, y] = cv2.fitLine(largest_contour, cv2.DIST_L2, 0, 0.01, 0.01)
 
                 # Calculate line's angle
-                yaw = np.arctan2(vy, vx)  # Angle in radians
+                yaw = np.arctan2(vy, vx) + np.pi / 2  # Angle in radians
             
                 # Calculate the center of the detected line in the image
                 center_x = np.mean([largest_contour[:, 0, 0].min(), largest_contour[:, 0, 0].max()])
@@ -91,65 +90,41 @@ class LineTracker(Node):
 
                 # Convert the line center to NED frame
                 if self.vehicle_odometry is not None:
-                    # Convert line center from FRD to NED
-                    R_ned_frd = R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]])
-                    R_mat_ned_frd = R_ned_frd.as_matrix()
-                    #R_mat_frd_ned = R_ned_frd.inv().as_matrix()
-                    current_pos = np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
 
-                    # camera position in NED
-                    pos_cam_frd = t_frd_cam
-                    pos_cam_ned = np.matmul(R_mat_ned_frd, pos_cam_frd) + current_pos
-                    
-                    # point ray in NED
-                    center_ray_cam = self.image_point_to_3d_ray([center_x, center_y], camera_matrix, dist_coeffs)
-                    center_ray_frd = np.matmul(R_frd_cam, center_ray_cam) + t_frd_cam
-                    center_ray_ned = np.matmul(R_mat_ned_frd, center_ray_frd) + pos_cam_ned
+                    yaw_vehicle = self.quat_get_yaw(self.vehicle_odometry.q)
 
-                    #print ("center_ray_ned: ", center_ray_ned)
-                    self.get_logger().info("center_ray_cam: %.2f %.2f %.2f" % (center_ray_cam[0], center_ray_cam[1], center_ray_cam[2]))
-                    self.get_logger().info("center_ray_frd: %.2f %.2f %.2f" % (center_ray_frd[0], center_ray_frd[1], center_ray_frd[2]))
-                    self.get_logger().info("center_ray_ned: %.2f %.2f %.2f" % (center_ray_ned[0], center_ray_ned[1], center_ray_ned[2]))
+                    # rotate the image_coord y offset to the ned frame
+                    image_coord = np.array([0, center_x])
+                    self.get_logger().debug("center_x: %s" % center_x)
+                    rot_mat_2d = np.array([[np.cos(yaw_vehicle), -np.sin(yaw_vehicle)], [np.sin(yaw_vehicle), np.cos(yaw_vehicle)]])
 
-                    # intersect the ray and the ground plane
-                    Z_ground = 0
-                    scale = (Z_ground - self.vehicle_odometry.position[2]) / center_ray_ned[2]
-                    if scale > 0:
-                        X_ground = center_ray_ned[0] * scale
-                        Y_ground = center_ray_ned[1] * scale
+                    lateral_offset_ned = np.dot(rot_mat_2d, image_coord)
+                    lateral_offset_ned = lateral_offset_ned / np.linalg.norm(lateral_offset_ned)
 
-                        self.get_logger().info("x and y realtive to current pos: %.2f %.2f" % (self.vehicle_odometry.position[0] - X_ground ,self.vehicle_odometry.position[1] - Y_ground))
-                        
-                        pos_x = X_ground
-                        pos_y = Y_ground
-                        pos_z = Z_ground
+                    self.last_detection_timestamp = self.get_clock().now().to_msg()
+                    msg.last_detection_timestamp = self.last_detection_timestamp
 
-                        self.last_detection_timestamp = self.get_clock().now().to_msg()
-                        msg.last_detection_timestamp = self.last_detection_timestamp
+                    msg.detected = True
+                    msg.offset = center_x
+                    msg.x_offset_dir = float(lateral_offset_ned[0])
+                    msg.y_offset_dir = float(lateral_offset_ned[1])
+                    msg.x_picture = float(center_y)
+                    msg.y_picture = float(center_x)
+                    msg.yaw = float(yaw + yaw_vehicle)
 
-                        msg.detected = True
-                        msg.x_global = float(pos_x)
-                        msg.y_global = float(pos_y)
-                        msg.z_global = float(pos_z)
-                        msg.x_picture = float(center_y)
-                        msg.y_picture = float(center_x)
-                        msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
+                    self.previous_yaw = msg.yaw
+                    self.previous_x_global = msg.x_global
+                    self.previous_y_global =  msg.y_global
+                    self.previous_x = msg.x_picture
+                    self.previous_y = msg.y_picture
 
-                        self.previous_yaw = msg.yaw
-                        self.previous_x_global = pos_x
-                        self.previous_y_global = pos_y
-                        self.previous_z_global = pos_z
-                        self.previous_x = msg.x_picture
-                        self.previous_y = msg.y_picture
-
-                        self.line_detection_publisher.publish(msg)
-                        self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
-                                        (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
+                    self.line_detection_publisher.publish(msg)
+                    self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
+                                    (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
             else:
                 msg.detected = False
-                msg.x_global = float(self.previous_x_global)
-                msg.y_global = float(self.previous_y_global)
-                msg.z_global = float(self.previous_z_global)
+                msg.x_offset_dir = float(self.previous_x_global)
+                msg.y_offset_dir = float(self.previous_y_global)
                 msg.yaw = float(self.previous_yaw)  # Default yaw if no line detected
                 msg.x_picture = float(self.previous_y)
                 msg.y_picture = float(self.previous_x)
@@ -157,21 +132,6 @@ class LineTracker(Node):
                 self.line_detection_publisher.publish(msg)
                 self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: False" % 
                                     (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
-
-    def image_point_to_3d_ray(self, image_point, camera_matrix, dist_coeffs):
-        # Convert the 2D image point to homogeneous coordinates (x, y, 1)
-        homogeneous_image_point = np.array([image_point[0], image_point[1], 1.0], dtype=np.float32)
-        
-        # Compute the inverse of the camera matrix
-        camera_matrix_inv = np.linalg.inv(camera_matrix)
-        
-        # Multiply the inverse of the camera matrix by the image point to get the ray direction
-        ray_direction = camera_matrix_inv.dot(homogeneous_image_point)
-        
-        # Normalize the ray direction vector (optional, for direction purposes)
-        ray_direction /= np.linalg.norm(ray_direction)
-        
-        return ray_direction
 
     def quat_get_yaw(self, q):
         q_w = q[0]

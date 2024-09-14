@@ -4,6 +4,8 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 
+#include <px4_msgs/msg/vehicle_odometry.hpp>
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <tucan_msgs/msg/line_follower.hpp>
@@ -13,6 +15,7 @@
 
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 using namespace px4_msgs::msg;
 using namespace tucan_msgs::msg;
@@ -39,18 +42,24 @@ private:
 	float lateral_vel;			   	// Lateral velocity in m/s 
 	float yaw_reference;			// Yaw reference in radians
 
+	float desired_altitude = -1.5; // Takeoff altitude in meters (negative up)
+
 	// Liming
 	float x_picture;
 	float y_picture;
-	float z_global;
-	float x_global;
-	float y_global;
+	float x_offset_dir;
+	float y_offset_dir;
 
+	float lateral_offset;
+
+	bool vehicle_odom_received_ = false;
+
+	VehicleOdometry vehicle_odom_;
 
 	float last_ar_time_tolerance = 3.5;   // s, how long to use the last AR marker position after it has been lost	
 
-	const float K_lateral = 1.0;
-	const float K_yaw = 0.1;
+	const float sideward_gain = 0.06; // m
+	const float forward_gain = 0.06; // m
 
 	const float ar_tolerance = 1; // Tolerance in meters for AR marker detection. Exit condition.
 	const float ar_tolerance_sq = ar_tolerance * ar_tolerance;
@@ -67,10 +76,12 @@ private:
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr line_follower_activation_publisher_;
 
+	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_odom_subscriber_;
 	rclcpp::Subscription<LineFollower>::SharedPtr line_detector_subscriber_;
 	rclcpp::Subscription<ARMarker>::SharedPtr ar_detector_subscriber_;
 	rclcpp::Subscription<Mode>::SharedPtr md_state_subscriber_;
 	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr ar_marker_id_subscriber_;
+	rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr desired_altitude_subscriber_;
 
 	void publish_setpoint();
 	void publish_mode_status();
@@ -80,6 +91,10 @@ private:
 	void process_ar_msg(const ARMarker::SharedPtr);
 	void process_state_msg(const Mode::SharedPtr);
 	void process_ar_id_msg(const std_msgs::msg::Int32::SharedPtr);
+	void process_altitude_msg(const std_msgs::msg::Float32::SharedPtr);
+
+
+	void vehicle_odom_callback(const VehicleOdometry& msg);
 
 	void activate_node();
 	void deactivate_node();

@@ -67,8 +67,14 @@ ModeLineFollower::ModeLineFollower() :
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
 		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
 		md_state_subscriber_{this->create_subscription<Mode>("/active_mode_id", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))},
-		ar_marker_id_subscriber_{this->create_subscription<std_msgs::msg::Int32>("mode_hover/desired_id", 5, std::bind(&ModeLineFollower::process_ar_id_msg, this, _1))}
+		ar_marker_id_subscriber_{this->create_subscription<std_msgs::msg::Int32>("mode_line_follower/desired_id", 5, std::bind(&ModeLineFollower::process_ar_id_msg, this, _1))},
+		desired_altitude_subscriber_{this->create_subscription<std_msgs::msg::Float32>("mode_line_follower/desired_altitude", 5, std::bind(&ModeLineFollower::process_altitude_msg, this, _1))}
 {
+	rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
+	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
+
+	vehicle_odom_subscriber_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&ModeLineFollower::vehicle_odom_callback, this, std::placeholders::_1));
+	
 	clock = this->get_clock();
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
 }
@@ -82,7 +88,26 @@ void ModeLineFollower::publish_setpoint()
 	RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
-	msg.position = {x_global, y_global, z_global};
+
+	float x_forward_dir = cos(yaw_reference);
+	float y_forward_dir = sin(yaw_reference);
+
+	float x_desired = 0.0;
+	float y_desired = 0.0;
+
+	if (lateral_offset > 50){ // towards the right
+		x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
+		y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
+
+	}else if(lateral_offset < -50){
+		x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
+		y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
+	}else{
+		x_desired = vehicle_odom_.position[0];
+		y_desired = vehicle_odom_.position[1];
+	}
+
+	msg.position = {x_desired, y_desired, desired_altitude};
 	msg.yaw = yaw_reference; // relative?
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	setpoint_publisher_->publish(msg);
@@ -138,9 +163,9 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 		yaw_reference = msg->yaw;
 		x_picture = msg->x_picture;
 		y_picture = msg->y_picture;
-		z_global = msg->z_global;
-		x_global = msg->x_global;
-		y_global = msg->y_global;
+		x_offset_dir = msg->x_offset_dir;
+		y_offset_dir = msg->y_offset_dir;
+		lateral_offset = msg->lateral_offset;
 		publish_setpoint();
 		publish_mode_status();
 	}
@@ -186,6 +211,17 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 			}
 		}
 	}
+}
+
+void ModeLineFollower::vehicle_odom_callback(const VehicleOdometry& msg)
+{
+	vehicle_odom_ = msg;
+	vehicle_odom_received_ = true;
+}
+
+void ModeLineFollower::process_altitude_msg(const std_msgs::msg::Float32::SharedPtr msg)
+{
+	desired_altitude = msg->data;
 }
 
 /**

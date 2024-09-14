@@ -22,6 +22,7 @@ class MissionDirector(Node):
 
         self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_hover/desired_id', 1)
         self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_precision_landing/desired_id', 1)
+        self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, 'mode_line_follower/desired_id', 1)
 
         self.hover_start_time = None
 
@@ -60,7 +61,7 @@ class MissionDirector(Node):
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
             case 'line_follower':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=301))
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=301))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'land'
