@@ -61,7 +61,6 @@ ModeLineFollower::ModeLineFollower() :
 		mode_status_{MODE_INACTIVE},
 		lateral_vel{0.0},
 		yaw_reference{0.0},
-		line_angle{0.0},
 		setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)},
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
@@ -70,6 +69,7 @@ ModeLineFollower::ModeLineFollower() :
 		line_follower_activation_publisher_{this->create_publisher<std_msgs::msg::Bool>("/cv_line_detector/enable", 5)},
 		ar_marker_id_subscriber_{this->create_subscription<std_msgs::msg::Int32>("mode_hover/desired_id", 5, std::bind(&ModeLineFollower::process_ar_id_msg, this, _1))}
 {
+	clock = this->get_clock();
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
 }
 
@@ -111,7 +111,7 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
 {
 	if (msg->mode_id == own_mode_id_)
 	{
-		if if (mode_status_ == MODE_INACTIVE){
+		if (mode_status_ == MODE_INACTIVE){
 			activate_node();
 		}
 	}else{
@@ -147,19 +147,36 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
 	if (mode_status_ == MODE_ACTIVE)
 	{
-		if (desired_ar_id == -1 || desired_ar_id != msg->id){}
-		    if 
+		if (msg->detected){
+			if (desired_ar_id == -1 || desired_ar_id != msg->id){
+				// TODO FINISH THIS
+				ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
+				RCLCPP_INFO(this->get_logger(), "AR radius squared %f", ar_radius_sq);
+				if(ar_radius_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+				{
+					deactivate_node();
+				}
+			}
+		}else if (msg->id != 0)
+		{
+			// Get the current time
+			rclcpp::Time now = clock->now();
 
+			// Let's assume `time_difference` is a rclcpp::Duration object
+			rclcpp::Duration time_difference = now - msg->last_detection_timestamp;  // 1.5 seconds as an example
 
+			// Convert the result to seconds (nanoseconds are represented as int64_t)
+			double time_difference_seconds = time_difference.seconds();
 
-
-			// TODO FINISH THIS
-			last_ar_id = msg->id;
-			ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
-			RCLCPP_INFO(this->get_logger(), "AR radius %f", ar_radius);
-			if(ar_radius_sq < ar_tolerance_sq && ar_radius > 0.0001) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
-			{
-				deactivate_node();
+			if (time_difference_seconds < last_ar_time_tolerance){
+				if (desired_ar_id == -1 || desired_ar_id != msg->id){
+					ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
+					RCLCPP_INFO(this->get_logger(), "AR radius squared (no detection) %f", ar_radius_sq);
+					if(ar_radius_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+					{
+						deactivate_node();
+					}
+				}
 			}
 		}
 	}

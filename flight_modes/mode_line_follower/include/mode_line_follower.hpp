@@ -11,7 +11,8 @@
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
 
-#include <std_msgs/msg/Bool.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/int32.hpp>
 
 using namespace px4_msgs::msg;
 using namespace tucan_msgs::msg;
@@ -44,7 +45,9 @@ private:
 	float z_global;
 	float x_global;
 	float y_global;
-	
+
+
+	float last_ar_time_tolerance = 3.5;   // s, how long to use the last AR marker position after it has been lost	
 
 	const float K_lateral = 1.0;
 	const float K_yaw = 0.1;
@@ -52,9 +55,9 @@ private:
 	const float ar_tolerance = 1; // Tolerance in meters for AR marker detection. Exit condition.
 	const float ar_tolerance_sq = ar_tolerance * ar_tolerance;
 
-	int last_ar_id;
-	float line_angle;
-	float ar_radius;
+	float ar_radius_sq;
+
+	rclcpp::Clock::SharedPtr clock;
 
 	int desired_ar_id = -1;
 	

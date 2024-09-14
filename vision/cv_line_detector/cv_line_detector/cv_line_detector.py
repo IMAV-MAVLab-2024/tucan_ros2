@@ -91,7 +91,6 @@ class LineTracker(Node):
                 # Convert the line center to NED frame
                 if self.vehicle_odometry is not None:
                     # Convert line center from FRD to NED
-
                     R_ned_frd = R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]])
                     R_mat_ned_frd = R_ned_frd.as_matrix()
                     #R_mat_frd_ned = R_ned_frd.inv().as_matrix()
@@ -100,7 +99,7 @@ class LineTracker(Node):
                     # camera position in NED
                     pos_cam_frd = t_frd_cam
                     pos_cam_ned = np.matmul(R_mat_ned_frd, pos_cam_frd) + current_pos
-
+                    
                     # point ray in NED
                     center_ray_cam = self.image_point_to_3d_ray([center_x, center_y], camera_matrix, dist_coeffs)
                     center_ray_frd = np.matmul(R_frd_cam, center_ray_cam) + t_frd_cam
@@ -109,34 +108,36 @@ class LineTracker(Node):
                     # intersect the ray and the ground plane
                     Z_ground = 0
                     scale = (Z_ground - self.vehicle_odometry.position[2]) / center_ray_ned[2]
-                    X_ground = center_ray_ned[0] * scale
-                    Y_ground = center_ray_ned[1] * scale
+                    if scale > 0:
+                        X_ground = center_ray_ned[0] * scale
+                        Y_ground = center_ray_ned[1] * scale
+                        
+                        pos_cam_ned
+                        pos_x = X_ground
+                        pos_y = Y_ground
+                        pos_z = Z_ground
 
-                    pos_x = X_ground
-                    pos_y = Y_ground
-                    pos_z = Z_ground
+                        self.last_detection_timestamp = self.get_clock().now().to_msg()
+                        msg.last_detection_timestamp = self.last_detection_timestamp
 
-                    self.last_detection_timestamp = self.get_clock().now().to_msg()
-                    msg.last_detection_timestamp = self.last_detection_timestamp
+                        msg.detected = True
+                        msg.x_global = float(pos_x)
+                        msg.y_global = float(pos_y)
+                        msg.z_global = float(pos_z)
+                        msg.x_picture = float(center_y)
+                        msg.y_picture = float(center_x)
+                        msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
 
-                    msg.detected = True
-                    msg.x_global = float(pos_x)
-                    msg.y_global = float(pos_y)
-                    msg.z_global = float(pos_z)
-                    msg.x_picture = float(center_y)
-                    msg.y_picture = float(center_x)
-                    msg.yaw = float(yaw + self.quat_get_yaw(self.vehicle_odometry.q))
+                        self.previous_yaw = msg.yaw
+                        self.previous_x_global = pos_x
+                        self.previous_y_global = pos_y
+                        self.previous_z_global = pos_z
+                        self.previous_x = msg.x_picture
+                        self.previous_y = msg.y_picture
 
-                    self.previous_yaw = msg.yaw
-                    self.previous_x_global = pos_x
-                    self.previous_y_global = pos_y
-                    self.previous_z_global = pos_z
-                    self.previous_x = msg.x_picture
-                    self.previous_y = msg.y_picture
-
-                    self.line_detection_publisher.publish(msg)
-                    self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
-                                    (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
+                        self.line_detection_publisher.publish(msg)
+                        self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
+                                        (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
             else:
                 msg.detected = False
                 msg.x_global = float(self.previous_x_global)
