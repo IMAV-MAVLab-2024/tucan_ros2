@@ -46,6 +46,8 @@ class LineTracker(Node):
 
         self.enabled = False
 
+        self.last_lateral_offset = 0
+
         self.previous_x = 0
         self.previous_y = 0
         self.previous_yaw = 0
@@ -93,6 +95,7 @@ class LineTracker(Node):
 
                     yaw_vehicle = self.quat_get_yaw(self.vehicle_odometry.q)
 
+                    center_x = center_x - img.shape[1] / 2
                     # rotate the image_coord y offset to the ned frame
                     image_coord = np.array([0, center_x])
                     self.get_logger().debug("center_x: %s" % center_x)
@@ -105,7 +108,7 @@ class LineTracker(Node):
                     msg.last_detection_timestamp = self.last_detection_timestamp
 
                     msg.detected = True
-                    msg.offset = center_x
+                    msg.lateral_offset = float(center_x)
                     msg.x_offset_dir = float(lateral_offset_ned[0])
                     msg.y_offset_dir = float(lateral_offset_ned[1])
                     msg.x_picture = float(center_y)
@@ -113,25 +116,27 @@ class LineTracker(Node):
                     msg.yaw = float(yaw + yaw_vehicle)
 
                     self.previous_yaw = msg.yaw
-                    self.previous_x_global = msg.x_global
-                    self.previous_y_global =  msg.y_global
+                    self.previous_x_global = msg.x_offset_dir
+                    self.previous_y_global =  msg.y_offset_dir
                     self.previous_x = msg.x_picture
                     self.previous_y = msg.y_picture
+                    self.last_lateral_offset = msg.lateral_offset
 
                     self.line_detection_publisher.publish(msg)
-                    self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f relative_yaw: %.2f Yaw: %.2f Detected: True" % 
-                                    (msg.x_global, msg.y_global, msg.z_global, yaw, msg.yaw))
+                    self.get_logger().info("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: True" %     
+                                        (msg.lateral_offset, msg.x_offset_dir, msg.y_offset_dir, msg.yaw))
             else:
                 msg.detected = False
                 msg.x_offset_dir = float(self.previous_x_global)
                 msg.y_offset_dir = float(self.previous_y_global)
+                msg.lateral_offset = float(self.last_lateral_offset)
                 msg.yaw = float(self.previous_yaw)  # Default yaw if no line detected
                 msg.x_picture = float(self.previous_y)
                 msg.y_picture = float(self.previous_x)
                 msg.last_detection_timestamp = self.last_detection_timestamp
                 self.line_detection_publisher.publish(msg)
-                self.get_logger().debug("Publishing: X: %.2f Y: %.2f Z: %.2f Yaw: %.2f Detected: False" % 
-                                    (msg.x_global, msg.y_global, msg.z_global, msg.yaw))
+                self.get_logger().info("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: False" %     
+                                        (msg.lateral_offset, msg.x_offset_dir, msg.y_offset_dir, msg.yaw))
 
     def quat_get_yaw(self, q):
         q_w = q[0]
