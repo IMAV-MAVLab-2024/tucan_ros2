@@ -63,10 +63,10 @@ ModeLineFollower::ModeLineFollower() :
 		yaw_reference{0.0},
 		setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 10)},
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
+		line_follower_activation_publisher_{this->create_publisher<std_msgs::msg::Bool>("/cv_line_detector/enable", 5)},
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
 		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
 		md_state_subscriber_{this->create_subscription<Mode>("/active_mode_id", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))},
-		line_follower_activation_publisher_{this->create_publisher<std_msgs::msg::Bool>("/cv_line_detector/enable", 5)},
 		ar_marker_id_subscriber_{this->create_subscription<std_msgs::msg::Int32>("mode_hover/desired_id", 5, std::bind(&ModeLineFollower::process_ar_id_msg, this, _1))}
 {
 	clock = this->get_clock();
