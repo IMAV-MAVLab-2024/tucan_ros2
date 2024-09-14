@@ -95,11 +95,7 @@ void ModeLineFollower::publish_setpoint()
 	float x_desired = 0.0;
 	float y_desired = 0.0;
 
-	if (lateral_offset > 50){ // towards the right
-		x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
-		y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
-
-	}else if(lateral_offset < -50){
+	if (lateral_offset > 50 || lateral_offset < -50){ // towards the right
 		x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
 		y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
 	}else{
@@ -160,14 +156,17 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 {
 	if (mode_status_== MODE_ACTIVE)
 	{
-		yaw_reference = msg->yaw;
-		x_picture = msg->x_picture;
-		y_picture = msg->y_picture;
-		x_offset_dir = msg->x_offset_dir;
-		y_offset_dir = msg->y_offset_dir;
-		lateral_offset = msg->lateral_offset;
-		publish_setpoint();
-		publish_mode_status();
+		if (msg->detected)
+		{
+			yaw_reference = msg->yaw;
+			x_picture = msg->x_picture;
+			y_picture = msg->y_picture;
+			x_offset_dir = msg->x_offset_dir;
+			y_offset_dir = msg->y_offset_dir;
+			lateral_offset = msg->lateral_offset;
+			publish_setpoint();
+			publish_mode_status();
+		}
 	}
 }
 

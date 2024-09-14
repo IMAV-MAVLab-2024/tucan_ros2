@@ -135,7 +135,11 @@ class LineTracker(Node):
                     msg.y_offset_dir = float(lateral_offset_ned[1])
                     msg.x_picture = float(center_y)
                     msg.y_picture = float(center_x)
-                    msg.yaw = float(-yaw + yaw_vehicle)
+                    
+                    if abs(yaw) > np.rad2deg(6):
+                        msg.yaw = float(yaw + yaw_vehicle)
+                    else:
+                        msg.yaw = float(yaw_vehicle)
 
                     self.previous_yaw = msg.yaw
                     self.previous_x_global = msg.x_offset_dir
