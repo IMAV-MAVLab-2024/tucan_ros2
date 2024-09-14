@@ -66,20 +66,11 @@ ModeLineFollower::ModeLineFollower() :
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 10)},
 		line_detector_subscriber_{this->create_subscription<LineFollower>("/cv_line_detection", 10, std::bind(&ModeLineFollower::process_line_msg, this, _1))},
 		ar_detector_subscriber_{this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeLineFollower::process_ar_msg, this, _1))},
-		md_state_subscriber_{this->create_subscription<Mode>("/active_mode_id", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))}
+		md_state_subscriber_{this->create_subscription<Mode>("/active_mode_id", 10, std::bind(&ModeLineFollower::process_state_msg, this, _1))},
+		line_follower_activation_publisher_{this->create_publisher<std_msgs::msg::Bool>("/cv_line_detector/enable", 5)},
+		ar_marker_id_subscriber_{this->create_subscription<std_msgs::msg::Int32>("mode_hover/desired_id", 5, std::bind(&ModeLineFollower::process_ar_id_msg, this, _1))}
 {
 	RCLCPP_INFO(this->get_logger(), "Starting Line follower mode");
-
-	timer_ = this->create_wall_timer(100ms, std::bind(&ModeLineFollower::timer_callback, this));
-}
-
-void ModeLineFollower::timer_callback(void)
-{
-	if (mode_status_==MODE_ACTIVE)
-	{
-		publish_mode_status();
-		RCLCPP_INFO(this->get_logger(), "Line angle %f \t AR marker ID: %d", line_angle, last_ar_id);
-	}
 }
 
 /**
@@ -110,14 +101,7 @@ void ModeLineFollower::publish_mode_status()
 	mode.mode_id = own_mode_id_;
 	msg.mode = mode;
 	msg.mode_status = mode_status_;
-	if (mode_status_ == MODE_ACTIVE)
-	{
-		msg.busy = true;
-	}
-	else
-	{
-		msg.busy = false;
-	}
+	msg.busy = false;
 }
 
 /**
@@ -127,7 +111,14 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
 {
 	if (msg->mode_id == own_mode_id_)
 	{
-		activate_node();
+		if if (mode_status_ == MODE_INACTIVE){
+			activate_node();
+		}
+	}else{
+		if (mode_status_ == MODE_ACTIVE){
+			deactivate_node();
+		}
+		mode_status_ = MODE_INACTIVE;
 	}
 }
 
@@ -136,17 +127,17 @@ void ModeLineFollower::process_state_msg(const Mode::SharedPtr msg)
  */
 void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 {
-	// line_angle = msg->angle;
-	// lateral_vel = K_lateral * msg->avg_offset;
-	// yaw_reference = K_yaw * msg->angle;
-	yaw_reference = msg->yaw;
-	x_picture = msg->x_picture;
-	y_picture = msg->y_picture;
-	z_global = msg->z_global;
-	x_global = msg->x_global;
-	y_global = msg->y_global;
-	
-
+	if (mode_status_== MODE_ACTIVE)
+	{
+		yaw_reference = msg->yaw;
+		x_picture = msg->x_picture;
+		y_picture = msg->y_picture;
+		z_global = msg->z_global;
+		x_global = msg->x_global;
+		y_global = msg->y_global;
+		publish_setpoint();
+		publish_mode_status();
+	}
 }
 
 /**
@@ -156,12 +147,20 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 {
 	if (mode_status_ == MODE_ACTIVE)
 	{
-		last_ar_id = msg->id;
-		ar_radius = msg->x*msg->x + msg->y*msg->y;
-		RCLCPP_INFO(this->get_logger(), "AR radius %f", ar_radius);
-		if(ar_radius < ar_tolerance && ar_radius > 0.0001) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
-		{
-			deactivate_node();
+		if (desired_ar_id == -1 || desired_ar_id != msg->id){}
+		    if 
+
+
+
+
+			// TODO FINISH THIS
+			last_ar_id = msg->id;
+			ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
+			RCLCPP_INFO(this->get_logger(), "AR radius %f", ar_radius);
+			if(ar_radius_sq < ar_tolerance_sq && ar_radius > 0.0001) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+			{
+				deactivate_node();
+			}
 		}
 	}
 }
@@ -172,8 +171,18 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
  */
 void ModeLineFollower::activate_node()
 {
+	// activate the cv line detector
+	std_msgs::msg::Bool msg;
+	msg.data = true;
+	line_follower_activation_publisher_->publish(msg);
+
 	mode_status_ = MODE_ACTIVE;
-	RCLCPP_INFO(this->get_logger(), "Mode line follower set to active");
+	RCLCPP_INFO(this->get_logger(), "Mode line follower activated");
+}
+
+void ModeLineFollower::process_ar_id_msg(const std_msgs::msg::Int32::SharedPtr msg)
+{
+	desired_ar_id = msg->data;
 }
 
 /**
@@ -182,8 +191,16 @@ void ModeLineFollower::activate_node()
  */
 void ModeLineFollower::deactivate_node()
 {
+	// activate the cv line detector
+	std_msgs::msg::Bool msg;
+	msg.data = false;
+	line_follower_activation_publisher_->publish(msg);
+
+	desired_ar_id = -1;
+
 	mode_status_ = MODE_FINISHED;
-	RCLCPP_INFO(this->get_logger(), "Mode line follower deactivated");
+
+	RCLCPP_INFO(this->get_logger(), "Mode line follower finished");
 	publish_mode_status();
 }
 
