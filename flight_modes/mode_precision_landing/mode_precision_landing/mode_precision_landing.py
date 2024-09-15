@@ -23,7 +23,6 @@ class ModePrecisionLanding(Node):
         super().__init__('mode_precision_landing')
         self.get_logger().info('Mode precision landing initialized')
         self.mode = tucan_msgs.Mode.PRECISION_LANDING
-        self.__frequency = 10 # Frequency in Hz
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -85,19 +84,16 @@ class ModePrecisionLanding(Node):
         self.mode_status_timer = self.create_timer(1./self.mode_status_frequency, self.publish_mode_status)
         
     def publish_mode_status(self):
-        msg = tucan_msgs.ModeStatus()
-        msg.mode.mode_id = self.mode
         if self.is_active:
+            msg = tucan_msgs.ModeStatus()
+            msg.mode.mode_id = self.mode
             if self.landing_finished:
                 msg.mode_status = msg.MODE_FINISHED
             else:
                 msg.mode_status = msg.MODE_ACTIVE
-        else:
-            msg.mode_status = msg.MODE_INACTIVE
 
-
-        msg.busy = False
-        self.mode_status_publisher_.publish(msg)
+            msg.busy = False
+            self.mode_status_publisher_.publish(msg)
         
     def state_callback(self, msg):
         # Activate node if mission state is idle
@@ -171,7 +167,7 @@ class ModePrecisionLanding(Node):
 
             self.lnd_vel_emwa_z = self.lnd_vel_ewma_alpha * self.vehicle_odom_.velocity[2] + (1 - self.lnd_vel_ewma_alpha) * self.lnd_vel_emwa_z
 
-            self.get_logger().info(f'Maybe landed: {self.maybe_landed}, lnd vel z: {self.lnd_vel_emwa_z}')
+            self.get_logger().debug(f'Maybe landed: {self.maybe_landed}, lnd vel z: {self.lnd_vel_emwa_z}')
             if not self.maybe_landed:
                 if abs(self.lnd_vel_emwa_z) < self.lnd_vel_z_threshold:
                     self.maybe_landed = True
@@ -180,7 +176,7 @@ class ModePrecisionLanding(Node):
                 if abs(self.lnd_vel_emwa_z) < self.lnd_vel_z_threshold:
                     time_difference = self.get_clock().now() - self.maybe_landed_start_time
 
-                    self.get_logger().info(f'Time difference: {time_difference.nanoseconds * 1e-9}')
+                    self.get_logger().debug(f'Time difference: {time_difference.nanoseconds * 1e-9}')
 
                     if time_difference.nanoseconds * 1e-9 > self.lnd_time_threshold:
                         self.landing_finished = True

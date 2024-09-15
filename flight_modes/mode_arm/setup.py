@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'mode_idle'
+package_name = 'mode_arm'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "mode_idle = mode_idle.mode_idle:main",
+            "mode_arm = mode_arm.mode_arm:main",
         ],
     },
 )

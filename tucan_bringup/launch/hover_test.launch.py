@@ -43,9 +43,9 @@ def generate_launch_description():
     )
     
     # Flight mode nodes
-    idle_node = Node(
-        package='mode_idle',
-        executable='mode_idle',
+    arm_node = Node(
+        package='mode_arm',
+        executable='mode_arm',
     )
     takeoff_node = Node(
         package='mode_takeoff',
@@ -86,7 +86,7 @@ def generate_launch_description():
     ld.add_action(ar_detection_node)
     ld.add_action(line_detection_node)
     
-    ld.add_action(idle_node)
+    ld.add_action(arm_node)
     ld.add_action(takeoff_node)
     ld.add_action(hover_node)
     ld.add_action(landing_node)

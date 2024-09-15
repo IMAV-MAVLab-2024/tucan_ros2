@@ -85,7 +85,7 @@ ModeLineFollower::ModeLineFollower() :
  */
 void ModeLineFollower::publish_setpoint()
 {
-	RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
+	//RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
 
