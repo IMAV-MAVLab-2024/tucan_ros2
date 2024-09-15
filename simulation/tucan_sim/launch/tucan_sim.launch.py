@@ -48,7 +48,7 @@ def generate_launch_description():
     os.environ['GZ_SIM_RESOURCE_PATH'] = ':' + os.path.join(world_pkgs, 'worlds')
     os.environ['GZ_SIM_RESOURCE_PATH'] += ':' + os.path.join(gateway_models_dir, 'models')
 
-    wait_spawn = ExecuteProcess(cmd=["sleep", "5"])
+    wait_spawn = ExecuteProcess(cmd=["sleep", "2"])
     
     px4_script_path = os.path.join(os.path.dirname(__file__), 'px4.launch.sh')
     microxrce_script_path = os.path.join(os.path.dirname(__file__), 'microxrce.launch.sh')
@@ -99,7 +99,7 @@ def generate_launch_description():
                 on_exit=[px4_process],
             )
         ),
-        px4_process,
+        wait_spawn,
         microxrce_process,
         use_groundcontrol,
         ExecuteProcess(cmd=['QGroundControl.AppImage'],

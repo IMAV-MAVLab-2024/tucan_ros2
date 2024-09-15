@@ -41,14 +41,14 @@ class MissionDirector(Node):
         # State machine implementation
         match self.__state:
             case 'start':
-                self.__state = 'line_follower'
+                self.__state = 'takeoff'
                 self.get_logger().info(f'Switching to {self.__state} mode')
                 
             case 'takeoff':
                 self.currently_active_mode_id = Mode.TAKEOFF
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'line_follower'
+                    self.__state = 'hover'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
                     self.hover_start_time = time.time()
 
@@ -56,19 +56,19 @@ class MissionDirector(Node):
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.HOVER  
                 #run for 20 seconds
-                if time.time() - self.hover_start_time > 5:
+                if time.time() - self.hover_start_time > 15:
                     self.__state = 'line_follower'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
             case 'line_follower':
-                self.line_follower_id_pub.publish(std_msgs.Int32(data=301))
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'line_follower'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
 
             case 'land':      
-                self.land_ar_id_pub.publish(std_msgs.Int32(data=301))
+                self.land_ar_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
         
         if self.currently_active_mode_id is not None:
