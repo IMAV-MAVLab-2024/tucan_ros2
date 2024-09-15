@@ -34,10 +34,13 @@ def generate_launch_description():
         package='cv_aruco_detector',
         executable='cv_aruco_detector',
     )
-    # line_detection_node = Node(
-    #     package='cv_line_detector',
-    #     executable='cv_line_detector',
-    # )
+    line_detection_node = Node(
+        package='cv_line_detector',
+        executable='cv_line_detector',
+        parameters=[
+            {"debug": True}
+        ],
+    )
     
     # Flight mode nodes
     idle_node = Node(
@@ -56,10 +59,10 @@ def generate_launch_description():
         package='mode_precision_landing',
         executable='mode_precision_landing',
     )
-    # land_node = Node(
-    #     package='mode_precision_landing',
-    #     executable='mode_precision_landing',
-    # )
+    line_mode = Node(
+        package='mode_line_follower',
+        executable='mode_line_follower',
+    )
     
     # Mission director - simple experiment edition
     mission_director = Node(
@@ -81,12 +84,14 @@ def generate_launch_description():
     ld.add_action(down_camera_driver_node)
     
     ld.add_action(ar_detection_node)
-    # ld.add_action(line_detection_node)
+    ld.add_action(line_detection_node)
     
     ld.add_action(idle_node)
     ld.add_action(takeoff_node)
     ld.add_action(hover_node)
     ld.add_action(landing_node)
+    ld.add_action(line_mode)
+    
     # ld.add_action(land_node)
     
     ld.add_action(mission_director)
