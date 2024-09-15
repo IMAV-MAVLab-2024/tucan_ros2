@@ -95,10 +95,10 @@ void ModeTakeoff::timer_callback()
 		else
 		{
 			//print the current error
-			RCLCPP_INFO(this->get_logger(), "Current error: %f", altitude_ + vehicle_odom_.position[2]);
+			RCLCPP_INFO(this->get_logger(), "Current error: %f", -((takeoff_z_ - altitude_) - vehicle_odom_.position[2]));
 			
 			publish_trajectory_setpoint();
-			if (!takeoff_finished && (altitude_ + vehicle_odom_.position[2]) < takeoff_tolerance)
+			if (!takeoff_finished && ((takeoff_z_ - altitude_) - vehicle_odom_.position[2]) > -takeoff_tolerance)
 			{
 				takeoff_finished = true;
 				RCLCPP_INFO(this->get_logger(), "Takeoff finished");

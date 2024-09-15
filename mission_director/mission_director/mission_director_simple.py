@@ -56,7 +56,7 @@ class MissionDirector(Node):
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.HOVER  
                 #run for 20 seconds
-                if time.time() - self.hover_start_time > 15:
+                if time.time() - self.hover_start_time > 5:
                     self.__state = 'line_follower'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
@@ -64,12 +64,30 @@ class MissionDirector(Node):
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'line_follower'
+                    self.__state = 'hover_end'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
+                    self.hover_start_time = time.time()
+
+            case 'hover_end':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=303))
+                self.currently_active_mode_id = Mode.HOVER  
+                #run for 20 seconds
+                if time.time() - self.hover_start_time > 5:
+                    self.__state = 'land'
+                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
             case 'land':      
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
+
+                if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'mission_finished'
+                    self.get_logger().info(f'Landing finished, switching to: {self.__state}')
+                    self.hover_start_time = time.time()
+            
+            case 'mission_finished':
+                pass
+
         
         if self.currently_active_mode_id is not None:
             #self.get_logger().debug(f'Currently active mode: {self.currently_active_mode_id}')
