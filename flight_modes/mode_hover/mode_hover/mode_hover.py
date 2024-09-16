@@ -38,7 +38,7 @@ class ModeHover(Node):
         
         self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
-        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_yaw", self.desired_yaw_callback, 5)
+        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_relative_yaw", self.desired_yaw_callback, 5)
         self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_altitude", self.desired_alt_callback, 5)
         self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_hover/desired_id", self.desired_id_callback, 5)
 
@@ -60,6 +60,7 @@ class ModeHover(Node):
         self.sideways_pos_gain = 0.2
 
         self.desired_yaw = None # rad
+        self.ar_yaw = None # rad
         self.desired_alt = 1.2 # m
         self.desired_ar_id = None
 
@@ -84,11 +85,11 @@ class ModeHover(Node):
                 self.publish_mode_status()
                 self.get_logger().info(f'Hover mode started')
 
-                if self.desired_yaw is None:
-                    self.desired_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
+                self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
         else:
             if self.is_active:
                 self.desired_yaw = None
+                self.ar_yaw = None
             self.is_active = False
         
     def AR_callback(self, msg):
@@ -102,6 +103,7 @@ class ModeHover(Node):
                     self.ar_x = msg.x_global
                     self.ar_y = msg.y_global
                     self.ar_z = msg.z_global
+                    self.ar_yaw = msg.yaw
                     self.publish_trajectory_setpoint()
             elif msg.id != 0: # ie an ar marker has been preiously found
                 time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
@@ -117,6 +119,7 @@ class ModeHover(Node):
                         self.ar_x = msg.x_global
                         self.ar_y = msg.y_global
                         self.ar_z = msg.z_global
+                        self.ar_yaw = msg.yaw
                         self.publish_trajectory_setpoint()
 
             self.publish_mode_status()
@@ -140,10 +143,16 @@ class ModeHover(Node):
         x_desired = self.ar_x
         y_desired = self.ar_y
         z_desired = self.ar_z - self.desired_alt
+        
+        if self.ar_yaw is None or self.desired_yaw is None:
+            desired_yaw = self.start_yaw
+        else:
+            current_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
+            desired_yaw = current_yaw + self.ar_yaw + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
 
         msg.position = [float(x_desired), float(y_desired), float(z_desired)]
         #self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
-        msg.yaw = self.desired_yaw
+        msg.yaw = desired_yaw
         self.setpoint_publisher_.publish(msg)
     
     def publish_offboard_position_mode(self):
