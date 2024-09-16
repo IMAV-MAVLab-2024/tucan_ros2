@@ -5,7 +5,7 @@ from std_msgs.msg import UInt8
 
 import tucan_msgs.msg as tucan_msgs
 
-    
+import wiringpi, time
 
 class DriverGripper(Node):
     """Gripper driver node
@@ -34,6 +34,21 @@ class DriverGripper(Node):
 
         rollup_duration = 3.5
         rolloff_duration = 0.25
+
+        wiringpi.wiringPiSetup()
+
+        self.pwm1_pin = 5
+        self.pwm2_pin = 8
+
+
+        wiringpi.pinMode(self.pwm1_pin, wiringpi.GPIO.PWM_OUTPUT)
+
+        wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+
+        # Set PWM range and clock
+        wiringpi.pwmSetRange(1024)  # Set range (0-1023 for example)
+        wiringpi.pwmSetClock(400)   # Adjust clock for frequency control
+
     
     def __publish_status(self):
         self.gripper_status_publisher.publish(self.status)
@@ -53,7 +68,11 @@ class DriverGripper(Node):
                 self.get_logger().info('Gripper not in open state, cannot close')
     
     def __gripper_start_open(self):
-        
+        wiringpi.pwmWrite
+
+    # Function to control the PWM duty cycle
+    def set_pwm_duty_cycle(self, duty_cycle):
+        wiringpi.pwmWrite(self.pwm1_pin, duty_cycle)
 
         
     
