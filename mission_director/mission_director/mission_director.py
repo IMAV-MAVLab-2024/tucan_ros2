@@ -92,8 +92,8 @@ class MissionDirector(Node):
 
             case 'photography':
                 self.task_photography_id_pub.publish(std_msgs.Int32(data=self.marker_ids['photography']))
-                self.currently_active_mode_id = Mode.PHOTOGRAPHY
-                if self.mode_feedback_.mode_id == Mode.PHOTOGRAPHY and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                self.currently_active_mode_id = Mode.WILDLIFE_PHOTOGRAPHER
+                if self.mode_feedback_.mode.mode_id == Mode.WILDLIFE_PHOTOGRAPHER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'line_follower_to_gate_start'
                     self.get_logger().info(f'Photography finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
@@ -116,8 +116,8 @@ class MissionDirector(Node):
 
             case 'gate':
                 self.task_gate_id_pub.publish(std_msgs.Int32(data=self.marker_ids['gate_end'])) # publish the marker id after the gate
-                self.currently_active_mode_id = Mode.GATE
-                if self.mode_feedback_.mode_id == Mode.GATE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                self.currently_active_mode_id = Mode.VERTICAL_GATE
+                if self.mode_feedback_.mode.mode_id == Mode.VERTICAL_GATE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_gate_end'
                     self.get_logger().info(f'Gate finished, switching to: {self.__state}')
                     self.start_start_time = time.time()

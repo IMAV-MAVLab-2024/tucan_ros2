@@ -1,58 +1,202 @@
 import rclpy
 from rclpy.node import Node
 
-from tucan_msgs.msg import Mode, ModeStatus
+import math
 
-class ModeWildlifePhotographer(Node):
-    """Sample placing mode node.
+import px4_msgs.msg as px4_msgs
+import tucan_msgs.msg as tucan_msgs
+from rclpy.qos import QoSProfile
+from rclpy.qos import DurabilityPolicy
+from rclpy.qos import HistoryPolicy
+from rclpy.qos import ReliabilityPolicy
+import tucan_msgs.msg as tucan_msgs
+
+from rclpy.time import Time
+from builtin_interfaces.msg import Time as HeaderTime
+
+import std_msgs.msg as std_msgs
+
+class ModeHover(Node):
+    """flight mode to hover above an AR marker.
+    Runs a timer that publishes the mode status every 1/frequency seconds and if node is set to active, publishes velocity setpoints.
+    Has a small internal control loop that adjusts the velocity setpoints based on the AR marker position. If no marker is detected, keeps position.
     """
     def __init__(self):
-        super().__init__('mode_wildlife_photographer')
-        self.mode = 3 # Photography mode ID is 3, DON'T CHANGE
-        self.state_subscriber = self.create_subscription(Mode,'mission_state', self.__listener_callback,1)
-        self.mode_status_publisher_ = self.create_publisher(ModeStatus, "mode_status", 10)
+        super().__init__('mode_hover')
+        self.get_logger().info('ModeHover initialized')
+        self.mode = tucan_msgs.Mode.WILDLIFE_PHOTOGRAPHER 
+        self.__frequency = 10 # Frequency in Hz
+
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        
         self.is_active = False
         
-        self.frequency = 1. # Node frequency in Hz
+        self.photo_taken = False # Start as false
+        self.take_photo_counter = 0
         
-        self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
-        
-    def execute(self):
-        """Execute the wildlife photographer mode.
-        """
-        self.get_logger().info('Executing wildlife photographer mode')
+        self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
+        self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
+        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_yaw", self.desired_yaw_callback, 5)
+        self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_altitude", self.desired_alt_callback, 5)
+        self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_hover/desired_id", self.desired_id_callback, 5)
 
-        # Implementation of the task
-
+        self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
-    def __listener_callback(self, msg):
-        if msg.mode_id == self.mode:
-            self.is_active = True
-    
-    def timer_callback(self):
-        if self.is_active:
-            self.publish_mode_status()
-            self.is_active = False
-            self.execute()
+        self.take_photo_publisher = self.create_publisher(std_msgs.Bool, "/take_photo", 10)
+        
+        self.setpoint_publisher_ = self.create_publisher(px4_msgs.TrajectorySetpoint, "/trajectory_setpoint", 10)
+        self.control_mode_publisher = self.create_publisher(px4_msgs.OffboardControlMode, "/offboard_control_mode", 10)
+        
+        self.AR_subsciber_ = self.create_subscription(tucan_msgs.ARMarker, "/cv_aruco_detection", self.AR_callback, 10)
+        
+        self.ar_x = 0.
+        self.ar_y = 0.
+        self.ar_z = 0.
+
+        self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
+        
+        # settings
+        self.forward_pos_gain = 0.2
+        self.sideways_pos_gain = 0.2
+        
+        self.current_yaw = None # rad
+        self.ar_yaw = None # rad
+        self.desired_yaw = None # rad
+        self.desired_alt = 1.2 # m
+        self.desired_ar_id = None
+
+        self.vehicle_odom_position_ = None
         
     def publish_mode_status(self):
-        msg = ModeStatus()
+        msg = tucan_msgs.ModeStatus()
         msg.mode.mode_id = self.mode
         if self.is_active:
             msg.mode_status = msg.MODE_ACTIVE
         else:
             msg.mode_status = msg.MODE_FINISHED
-        msg.busy = self.is_active
-        self.mode_status_publisher_.publish(msg)
 
+        msg.busy = False
+        self.mode_status_publisher_.publish(msg)
+        
+    def state_callback(self, msg):
+        # Activate node if mission state is idle
+        if msg.mode_id == self.mode:
+            if self.is_active == False:
+                self.is_active = True
+                self.publish_mode_status()
+                self.get_logger().info(f'Hover mode started')
+
+                if self.desired_yaw is None:
+                    self.desired_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
+        else:
+            if self.is_active:
+                self.desired_yaw = None
+            self.is_active = False
+        
+    def AR_callback(self, msg):
+        # Update the 
+        if self.is_active:
+            if not self.photo_taken:
+                if msg.detected:
+                    if self.desired_ar_id is None or self.desired_ar_id == msg.id:
+                        # offsets are between -0.5 and 0.5 and flipped to the FRD frame
+                        #self.get_logger().info(f'AR marker detected with ID {msg.id}')
+                        #self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                        self.ar_x = msg.x_global
+                        self.ar_y = msg.y_global
+                        self.ar_z = msg.z_global
+                        self.ar_yaw = msg.yaw
+                        self.desired_yaw = self.current_yaw - self.ar_yaw - math.pi/2 # orient yourself to pi/2 w.r.t. the marker
+                        self.publish_trajectory_setpoint()
+                elif msg.id != 0: # ie an ar marker has been preiously found
+                    time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
+
+                    # Convert the result (which is an rclpy.duration.Duration object) to seconds
+                    time_difference_seconds = time_difference.nanoseconds * 1e-9
+
+                    #self.get_logger().info(f'no ar detection, age of old detection (s): {time_difference_seconds}')
+
+                    if time_difference_seconds < self.last_ar_time_tolerance:
+                        if self.desired_ar_id is None or self.desired_ar_id == msg.id:
+                            #self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
+                            self.ar_x = msg.x_global
+                            self.ar_y = msg.y_global
+                            self.ar_z = msg.z_global
+                            self.ar_yaw = msg.yaw
+                            
+                            self.desired_yaw = self.current_yaw - self.ar_yaw - math.pi/2 # orient yourself to pi/2 w.r.t. the marker
+                            self.publish_trajectory_setpoint()
+                
+                # Check if yaw is achieved
+                if self.ar_yaw + math.pi/2 < self.yaw_tolerance:
+                    self.take_photo()
+                    self.take_photo_counter+=1
+                
+                if self.take_photo_counter == 10:
+                    self.photo_taken = True
+                    self.get_logger().info("Photography mode completed")
+                    self.is_active = False
+                    
+            self.publish_mode_status()
+            self.publish_offboard_position_mode()
+
+    def take_photo(self):
+        self.take_photo_publisher.publish(True)
+        
+    def vehicle_odom_callback(self, msg):
+        self.vehicle_odom_ = msg
+
+    def desired_yaw_callback(self, msg):
+        self.desired_yaw = msg.data
+
+    def desired_alt_callback(self, msg):
+        self.desired_alt = msg.data
+
+    def desired_id_callback(self, msg):
+        self.desired_ar_id = msg.data
+
+    def publish_trajectory_setpoint(self):
+        msg = px4_msgs.TrajectorySetpoint()
+
+        x_desired = self.ar_x
+        y_desired = self.ar_y
+        z_desired = self.ar_z - self.desired_alt
+
+        msg.position = [float(x_desired), float(y_desired), float(z_desired)]
+        #self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
+        msg.yaw = self.desired_yaw
+        self.setpoint_publisher_.publish(msg)
+    
+    def publish_offboard_position_mode(self):
+        msg = px4_msgs.OffboardControlMode()
+        msg.position = True
+        msg.velocity = False
+        msg.acceleration = False
+        msg.attitude = False
+        msg.body_rate = False
+        self.control_mode_publisher.publish(msg)
+
+    def quat_get_yaw(self, q):
+        q_w = q[0]
+        q_x = q[1]
+        q_y = q[2]
+        q_z = q[3]
+        return math.atan2(2.0 * (q_w * q_z + q_x * q_y), 1.0 - 2.0 * (q_y * q_y + q_z * q_z))
+        
 def main(args=None):
     rclpy.init(args=args)
-    mode_wildlife_photographer = ModeWildlifePhotographer()
 
-    rclpy.spin(mode_wildlife_photographer)
+    mode_hover = ModeHover()
 
-    mode_wildlife_photographer.destroy_node()
+    rclpy.spin(mode_hover)
+
+    mode_hover.destroy_node()
     rclpy.shutdown()
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
