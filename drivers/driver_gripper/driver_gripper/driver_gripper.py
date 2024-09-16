@@ -55,6 +55,9 @@ class DriverGripper(Node):
 
         self.timer = None
 
+        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_engaged)
+        wiringpi.pwmWrite(self.pin_cont, self.us_cont_stop)
+
     
     def __publish_status(self):
         self.gripper_status_publisher.publish(self.status)
@@ -100,7 +103,9 @@ class DriverGripper(Node):
 
     def set_pwm_duty_cycle(self, pin, pulse_width_us):
         time_per_step = (1/self.servo_frequency * 10**6) / self.pwm_range  # Calculate time per step
+        self.get_logger().info(f'Time per step: {time_per_step}')
         duty_cycle_value = int(pulse_width_us / time_per_step)  # Convert us to PWM value
+        self.get_logger().info(f'Pulse width: {pulse_width_us}, Duty cycle: {duty_cycle_value}')
         wiringpi.pwmWrite(pin, duty_cycle_value)
     
 def main(args=None):
