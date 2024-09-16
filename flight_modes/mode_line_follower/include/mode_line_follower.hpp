@@ -54,8 +54,6 @@ private:
 
 	bool vehicle_odom_received_ = false;
 
-	float last_line_time_tolerance = 1.5;   // s, how long to use the last line position after it has been lost
-
 	VehicleOdometry vehicle_odom_;
 
 	float last_ar_time_tolerance = 3.5;   // s, how long to use the last AR marker position after it has been lost	
