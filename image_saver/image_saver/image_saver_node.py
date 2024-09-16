@@ -32,7 +32,7 @@ class ImageSaverNode(Node):
         if msg.data:
             self.get_logger().info('Taking a photo...')
 
-            is_success, img_msg = rclpy.wait_for_message.wait_for_message(Image, self, '/down_camera_image', time_to_wait=2.0)
+            is_success, img_msg = rclpy.wait_for_message.wait_for_message(Image, self, '/front_camera_image', time_to_wait=2.0)
             if is_success:
                 cv_image = self.bridge.imgmsg_to_cv2(img_msg, "bgr8")
                 
