@@ -55,8 +55,8 @@ class DriverGripper(Node):
 
         self.timer = None
 
-        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_engaged)
-        wiringpi.pwmWrite(self.pin_cont, self.us_cont_stop)
+        self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_engaged)
+        self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_stop)
 
     
     def __publish_status(self):
@@ -76,21 +76,21 @@ class DriverGripper(Node):
     
     def __gripper_start_open(self):
         self.status.status = tucan_msgs.GripperStatus.OPENING
-        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_engaged)
-        wiringpi.pwmWrite(self.pin_cont, self.us_cont_rollup)
+        self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_engaged)
+        self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_rollup)
         self.__publish_status()
 
         self.timer = self.create_timer(self.rollup_duration, self.__gripper_finish_open)
     
     def __gripper_finish_open(self):
-        wiringpi.pwmWrite(self.pin_cont, self.us_cont_stop)
+        self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_stop)
         self.status.status = tucan_msgs.GripperStatus.OPENED
         self.__publish_status()
         self.timer.cancel()
 
     def __gripper_start_close(self):
         self.status.status = tucan_msgs.GripperStatus.CLOSING
-        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_disengaged)
+        self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_disengaged)
         self.__publish_status()
 
         self.timer = self.create_timer(self.engage_duration, self.__gripper_finish_close)
