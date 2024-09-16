@@ -6,6 +6,8 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 # import imutils
 
+import math
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -118,26 +120,48 @@ class MarkerDetector(Node):
             # loop over the detected ArUCo corners
             for (markerCorner, markerID) in zip(corners, ids):
 
-                rvec_cam, tvec_cam, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size_dict[markerID], camera_matrix, dist_coeffs)
+                if markerID not in marker_size_dict:
+                    marker_size = 0.1
+                else:
+                    marker_size = marker_size_dict[markerID]
+
+                rvec_cam, tvec_cam, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size, camera_matrix, dist_coeffs)
                 # extract the marker corners (which are always returned
                 # in top-left, top-right, bottom-right, and bottom-left
                 # order)
                 corners = markerCorner.reshape((4, 2))
                 (topLeft, topRight, bottomRight, bottomLeft) = corners
                 if len(rvec_cam)>0:
+                    # Store the rotation information
+                    rotation_matrix = np.eye(4)
+                    rotation_matrix[0:3, 0:3] = cv2.Rodrigues(np.array(rvec_cam[0][0]))[0]
+                    r = R.from_matrix(rotation_matrix[0:3, 0:3])
+                    quat = r.as_quat()   
+                    
+                    # Quaternion format     
+                    transform_rotation_x = quat[0] 
+                    transform_rotation_y = quat[1] 
+                    transform_rotation_z = quat[2] 
+                    transform_rotation_w = quat[3] 
+                    
+                    # Euler angle format in radians
+                    _, _, yaw_z = self.euler_from_quaternion(transform_rotation_x, 
+                                                                transform_rotation_y, 
+                                                                transform_rotation_z, 
+                                                                transform_rotation_w)
+
                     rvec_cam = rvec_cam[0][0]
+
                     tvec_cam = tvec_cam[0][0]
 
                     tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
-                    rvec_frd = np.dot(R_frd_cam, rvec_cam) 
                     
                     # rotate realtive vector to the NED frame from the body frame
                     R_ned_frd = R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix()
                     tvec_ned = np.matmul(R_ned_frd, tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
-                    r_vec_ned = np.matmul(R_ned_frd, rvec_frd)
 
-                    # get the yaw of the rotation vector
-                    yaw = R.from_quat(r_vec_ned).as_euler()[2]
+                    # get the yaw from the direction vector
+                    yaw = yaw_z
 
                     # NED frame position
                     pos_x = tvec_ned[0]
@@ -202,6 +226,35 @@ class MarkerDetector(Node):
         # cv2.imshow("window_frame", img)
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     return
+
+    def euler_from_quaternion(self, x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+            
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+            
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+            
+        return roll_x, pitch_y, yaw_z # in radians
+
+    def quat_get_yaw(self, q):
+        q_w = q[3]
+        q_x = q[0]
+        q_y = q[1]
+        q_z = q[2]
+        return math.atan2(2.0 * (q_w * q_z + q_x * q_y), 1.0 - 2.0 * (q_y * q_y + q_z * q_z))
 
 def main():
     rclpy.init()
