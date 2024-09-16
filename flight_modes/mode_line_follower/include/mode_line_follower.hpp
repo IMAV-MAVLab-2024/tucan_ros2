@@ -59,20 +59,19 @@ private:
 	VehicleOdometry vehicle_odom_;
 
 	float last_ar_time_tolerance = 3.5;   // s, how long to use the last AR marker position after it has been lost	
+	float last_line_time_tolerance = 2.0;   // s, how long to use the last AR marker position after it has been lost	
 
-	const float sideward_gain = 0.15; // m
-	const float forward_gain = 0.2; // m
+	const float sideward_gain = 0.2; // m
+	const float forward_gain = 0.4; // m
 
-	const float ar_tolerance = 1; // Tolerance in meters for AR marker detection. Exit condition.
+	const float ar_tolerance = 1.5; // Tolerance in meters for AR marker detection. Exit condition.
 	const float ar_tolerance_sq = ar_tolerance * ar_tolerance;
 
-	float ar_radius_sq;
+	float ar_distance_sq;
 
 	rclcpp::Clock::SharedPtr clock;
 
 	int desired_ar_id = -1;
-	
-	rclcpp::TimerBase::SharedPtr timer_;
 
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr setpoint_publisher_;
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
@@ -87,7 +86,6 @@ private:
 
 	void publish_setpoint();
 	void publish_mode_status();
-	void timer_callback(void);
 	
 	void process_line_msg(const LineFollower::SharedPtr);
 	void process_ar_msg(const ARMarker::SharedPtr);

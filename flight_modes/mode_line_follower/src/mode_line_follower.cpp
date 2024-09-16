@@ -85,7 +85,7 @@ ModeLineFollower::ModeLineFollower() :
  */
 void ModeLineFollower::publish_setpoint()
 {
-	RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
+	//RCLCPP_INFO(this->get_logger(), "Publishing line setpoint");
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
 
@@ -124,6 +124,7 @@ void ModeLineFollower::publish_mode_status()
 	msg.mode = mode;
 	msg.mode_status = mode_status_;
 	msg.busy = false;
+	mode_status_publisher_->publish(msg);
 }
 
 /**
@@ -167,7 +168,6 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 			publish_setpoint();
 			publish_mode_status();
 		}else{
-
 			// Get the current time
 			rclcpp::Time now = clock->now();
 
@@ -199,11 +199,12 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 	if (mode_status_ == MODE_ACTIVE)
 	{
 		if (msg->detected){
-			if (desired_ar_id == -1 || desired_ar_id != msg->id){
-				// TODO FINISH THIS
-				ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
-				RCLCPP_INFO(this->get_logger(), "AR radius squared %f", ar_radius_sq);
-				if(ar_radius_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+			if (desired_ar_id == -1 || desired_ar_id == msg->id){
+				float x_dist = msg->x_global - vehicle_odom_.position[0];
+				float y_dist = msg->y_global - vehicle_odom_.position[1];
+				ar_distance_sq = x_dist*x_dist + y_dist*y_dist;
+				RCLCPP_INFO(this->get_logger(), "AR distance squared %f", ar_distance_sq);
+				if(ar_distance_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
 				{
 					deactivate_node();
 				}
@@ -220,10 +221,12 @@ void ModeLineFollower::process_ar_msg(const ARMarker::SharedPtr msg)
 			double time_difference_seconds = time_difference.seconds();
 
 			if (time_difference_seconds < last_ar_time_tolerance){
-				if (desired_ar_id == -1 || desired_ar_id != msg->id){
-					ar_radius_sq = msg->x*msg->x + msg->y*msg->y;
-					RCLCPP_INFO(this->get_logger(), "AR radius squared (no detection) %f", ar_radius_sq);
-					if(ar_radius_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
+				if (desired_ar_id == -1 || desired_ar_id == msg->id){
+					float x_dist = msg->x_global - vehicle_odom_.position[0];
+					float y_dist = msg->y_global - vehicle_odom_.position[1];
+					ar_distance_sq = x_dist*x_dist + y_dist*y_dist;
+					RCLCPP_INFO(this->get_logger(), "AR distance squared (no detection) %f", ar_distance_sq);
+					if(ar_distance_sq < ar_tolerance_sq) // equals 0 if there is no ar marker -> >0.0001 to avoid exiting
 					{
 						deactivate_node();
 					}

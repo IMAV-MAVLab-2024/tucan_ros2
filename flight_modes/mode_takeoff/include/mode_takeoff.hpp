@@ -26,7 +26,7 @@ public:
 	ModeTakeoff();
 
 private:
-	float altitude_ = 1.5; // Takeoff altitude in meters (positive up)
+	float altitude_ = 1.0; // Takeoff altitude in meters (positive up)
 	float takeoff_tolerance = 0.2; // Takeoff tolerance in meters 
 
 	bool initiated_takeoff = false;		// Flag to check if takeoff has been initiated
@@ -58,7 +58,6 @@ private:
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
-	rclcpp::Client<px4_msgs::srv::VehicleCommand>::SharedPtr vehicle_command_client_;
 
 	void timer_callback();
 	void publish_offboard_position_mode();

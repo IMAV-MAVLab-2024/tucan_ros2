@@ -156,7 +156,7 @@
     <atmosphere type='adiabatic'/>
     <scene>
       <grid>false</grid>
-      <ambient>0.400000006 0.400000006 0.400000006 1</ambient>
+      <ambient>0.800000012 0.800000012 0.800000012 1</ambient>
       <background>0.699999988 0.699999988 0.699999988 1</background>
       <shadows>true</shadows>
     </scene>
@@ -217,55 +217,171 @@
       <pose>0 0 0 0 0 0</pose>
       <self_collide>false</self_collide>
     </model>
-    <model name='cylinder'>
-      <pose>1.6200283482313447 -0.086436918629451742 0.4999991715375221 -2.4447849564711705e-18 -3.3543452047184363e-20 4.6699682335540652e-21</pose>
-      <link name='cylinder_link'>
-        <inertial>
-          <inertia>
-            <ixx>0.14580000000000001</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.14580000000000001</iyy>
-            <iyz>0</iyz>
-            <izz>0.125</izz>
-          </inertia>
-          <mass>1</mass>
-          <pose>0 0 0 0 0 0</pose>
-        </inertial>
-        <collision name='cylinder_collision'>
-          <geometry>
-            <cylinder>
-              <radius>0.5</radius>
-              <length>1</length>
-            </cylinder>
-          </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
-        </collision>
-        <visual name='cylinder_visual'>
-          <geometry>
-            <cylinder>
-              <radius>0.5</radius>
-              <length>1</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0.300000012 0.300000012 0.300000012 1</ambient>
-            <diffuse>0.699999988 0.699999988 0.699999988 1</diffuse>
-            <specular>1 1 1 1</specular>
-          </material>
-        </visual>
-        <pose>0 0 0 0 0 0</pose>
-        <enable_wind>false</enable_wind>
-      </link>
-      <static>false</static>
-      <self_collide>false</self_collide>
-    </model>
+    <include>
+      <uri>model://tucan</uri>
+      <name>tucan_0</name>
+      <pose>1.5050060688141941e-11 -1.0075775446783284e-11 -0.013000834726258098 -6.8969165954027905e-10 -1.0301905397438528e-09 2.2731083947838917e-17</pose>
+    </include>
+    <include>
+      <uri>model://blue_line_straight</uri>
+      <name>blue_line_straight</name>
+      <pose>0.75 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://blue_line_left</uri>
+      <name>blue_line_left</name>
+      <pose>1.75 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://blue_line_straight</uri>
+      <name>blue_line_straight_0</name>
+      <pose>1.75 1 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://blue_line_straight</uri>
+      <name>blue_line_straight_1</name>
+      <pose>1.75 2 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass</name>
+      <pose>0.75 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_0</name>
+      <pose>0.75 2 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_1</name>
+      <pose>-0.25 2 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_2</name>
+      <pose>-0.25 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_3</name>
+      <pose>-0.25 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_4</name>
+      <pose>-1.25 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_5</name>
+      <pose>-1.25 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_6</name>
+      <pose>-1.25 2 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_7</name>
+      <pose>-1.25 3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_8</name>
+      <pose>-1.25 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_9</name>
+      <pose>-0.25 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_10</name>
+      <pose>0.75 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_11</name>
+      <pose>1.75 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_12</name>
+      <pose>2.75 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_13</name>
+      <pose>2.75 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_14</name>
+      <pose>2.75 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_15</name>
+      <pose>2.75 2 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_16</name>
+      <pose>2.75 3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_17</name>
+      <pose>1.75 3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_18</name>
+      <pose>0.75 3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_19</name>
+      <pose>-0.25 3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_20</name>
+      <pose>-1.25 4 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_21</name>
+      <pose>-0.25 4 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_22</name>
+      <pose>0.75 4 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_23</name>
+      <pose>1.75 4 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://grass</uri>
+      <name>grass_24</name>
+      <pose>2.75 4 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model:///aruco_302</uri>
+      <name>aruco_302</name>
+      <pose>0.005657839995407421 -0.004092633450890143 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model:///aruco_303</uri>
+      <name>aruco_303</name>
+      <pose>1.7547139707140424 2.6778575805929372 0 0 0 0</pose>
+    </include>
     <light name='sunUTC' type='directional'>
       <pose>0 0 500 0 0 0</pose>
       <cast_shadows>true</cast_shadows>

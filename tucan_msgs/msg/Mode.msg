@@ -1,5 +1,5 @@
 uint8 NO_MODE = 0
-uint8 IDLE = 1
+uint8 ARM = 1
 uint8 HOVER = 2
 uint8 LINE_FOLLOWER = 3
 uint8 PASS_TRANSPARENT_WINDOW = 4

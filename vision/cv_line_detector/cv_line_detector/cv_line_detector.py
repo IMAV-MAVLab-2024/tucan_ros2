@@ -77,7 +77,7 @@ class LineTracker(Node):
             # Convert image to HSV
             hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
             # Define the color range for the blue color
-            lower_blue = np.array([100, 150, 0])
+            lower_blue = np.array([100, 150, 50])
             upper_blue = np.array([140, 255, 255])
             mask = cv2.inRange(hsv, lower_blue, upper_blue)
 
@@ -124,7 +124,10 @@ class LineTracker(Node):
                     rot_mat_2d = np.array([[np.cos(yaw_vehicle), -np.sin(yaw_vehicle)], [np.sin(yaw_vehicle), np.cos(yaw_vehicle)]])
 
                     lateral_offset_ned = np.dot(rot_mat_2d, image_coord)
-                    lateral_offset_ned = lateral_offset_ned / np.linalg.norm(lateral_offset_ned)
+
+                    norm = np.linalg.norm(lateral_offset_ned)
+                    if norm != 0:
+                        lateral_offset_ned = lateral_offset_ned / np.linalg.norm(lateral_offset_ned)
 
                     self.last_detection_timestamp = self.get_clock().now().to_msg()
                     msg.last_detection_timestamp = self.last_detection_timestamp
@@ -136,7 +139,7 @@ class LineTracker(Node):
                     msg.x_picture = float(center_y)
                     msg.y_picture = float(center_x)
                     
-                    if abs(yaw) > np.rad2deg(6):
+                    if abs(yaw) > np.deg2rad(6):
                         msg.yaw = float(yaw + yaw_vehicle)
                     else:
                         msg.yaw = float(yaw_vehicle)
@@ -149,7 +152,7 @@ class LineTracker(Node):
                     self.last_lateral_offset = msg.lateral_offset
 
                     self.line_detection_publisher.publish(msg)
-                    self.get_logger().info("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: True" %     
+                    self.get_logger().debug("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: True" %     
                                         (msg.lateral_offset, msg.x_offset_dir, msg.y_offset_dir, msg.yaw))
             else:
                 msg.detected = False
@@ -161,7 +164,7 @@ class LineTracker(Node):
                 msg.y_picture = float(self.previous_x)
                 msg.last_detection_timestamp = self.last_detection_timestamp
                 self.line_detection_publisher.publish(msg)
-                self.get_logger().info("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: False" %     
+                self.get_logger().debug("Publishing: lateral_offset: %.2f x_offset_dir: %.2f y_offset_dir: %.2f yaw: %.2f Detected: False" %     
                                         (msg.lateral_offset, msg.x_offset_dir, msg.y_offset_dir, msg.yaw))
 
     def quat_get_yaw(self, q):

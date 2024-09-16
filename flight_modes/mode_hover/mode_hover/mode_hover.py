@@ -82,7 +82,7 @@ class ModeHover(Node):
             if self.is_active == False:
                 self.is_active = True
                 self.publish_mode_status()
-                self.get_logger().info(f'Takeoff mode started')
+                self.get_logger().info(f'Hover mode started')
 
                 if self.desired_yaw is None:
                     self.desired_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
