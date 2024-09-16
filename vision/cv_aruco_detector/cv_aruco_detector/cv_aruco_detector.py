@@ -35,6 +35,17 @@ R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
 
 t_frd_cam = np.array([-0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
+marker_size_dict = {
+    100: 0.15, # Start
+    105: 0.15, # Photography
+    200: 0.15, # Before gate
+    205: 0.15, # After gate
+    300: 0.1, # 50 cm platform
+    301: 0.1, # 35 cm platform
+    302: 0.1, # 20 cm platform
+    400: 0.15, # Sample
+    405: 0.15 # Placement target
+}
 
 class MarkerDetector(Node):
     def __init__(self):
@@ -105,7 +116,7 @@ class MarkerDetector(Node):
             # loop over the detected ArUCo corners
             for (markerCorner, markerID) in zip(corners, ids):
 
-                rvec_cam, tvec_cam, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size, camera_matrix, dist_coeffs)
+                rvec_cam, tvec_cam, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorner, marker_size_dict[markerID], camera_matrix, dist_coeffs)
                 # extract the marker corners (which are always returned
                 # in top-left, top-right, bottom-right, and bottom-left
                 # order)
