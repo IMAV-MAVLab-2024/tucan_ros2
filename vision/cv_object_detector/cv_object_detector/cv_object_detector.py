@@ -27,7 +27,7 @@ cylinder_length = 0.20  # 长度（米）
 class CylinderDetector(Node):
     def __init__(self):
         super().__init__("cv_object_detector")
-        self.get_logger().info("CV Cylinder detection Node has been started")
+        self.get_logger().info("CV object detection Node has been started")
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,

@@ -69,6 +69,7 @@ def generate_launch_description():
     
     ld.add_action(ar_detection_node)
     ld.add_action(line_detection_node)
+    ld.add_action(object_detection_node)
 
     ld.add_action(offboard_handler)
 
