@@ -22,13 +22,13 @@ class MissionDirector(Node):
         self.state_publisher = self.create_publisher(std_msgs.String, '/mission_state', 1)
         self.fm_finish_subscriber = self.create_subscription(ModeStatus,'/mode_status', self.__mode_status_callback, 1)
 
-        self.hover_desired_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_hover/desired_yaw', 1)
+        self.hover_desired_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_hover/desired_relative_yaw', 1)
 
         self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_hover/desired_id', 1)
         self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_precision_landing/desired_id', 1)
         self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, 'mode_line_follower/desired_id', 1)
 
-        self.start_start_time = None
+        self.start_time = None
 
         self.currently_active_mode_id = Mode.NO_MODE
 
@@ -52,21 +52,33 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.TAKEOFF
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'hover'
+                    self.__state = 'hover_left'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
+                    self.start_time = time.time()
 
-            case 'hover':
+            case 'hover_left':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.HOVER  #
 
-                elapsed_time = time.time() - self.start_start_time
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=elapsed_time * 2 * math.pi / 10))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(-math.pi/2)))
 
                 #run for 20 seconds
-                if time.time() - self.start_start_time > 60:
+                if time.time() - self.start_time > 5:
+                    self.__state = 'hover_forward'
+                    self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
+                    self.start_time = time.time()
+
+            case 'hover_forward':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
+                self.currently_active_mode_id = Mode.HOVER 
+
+                elapsed_time = time.time() - self.start_time
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
+
+                #run for 20 seconds
+                if time.time() - self.start_time > 5:
                     self.__state = 'line_follower'
-                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
 
             case 'line_follower':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=303))
@@ -74,13 +86,13 @@ class MissionDirector(Node):
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_end'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
+                    self.start_time = time.time()
 
             case 'hover_end':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.HOVER  
                 #run for 20 seconds
-                if time.time() - self.start_start_time > 10:
+                if time.time() - self.start_time > 10:
                     self.__state = 'land'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
@@ -91,10 +103,10 @@ class MissionDirector(Node):
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'wait'
                     self.get_logger().info(f'Landing finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
+                    self.start_time = time.time()
 
             case 'wait':      
-                if time.time() - self.start_start_time > 5:
+                if time.time() - self.start_time > 5:
                     self.__state = 'arm'
                     self.get_logger().info(f'Wait finished, switching to: {self.__state}')
 
@@ -111,7 +123,7 @@ class MissionDirector(Node):
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'land2'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
+                    self.start_time = time.time()
 
             case 'land2':      
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=303))

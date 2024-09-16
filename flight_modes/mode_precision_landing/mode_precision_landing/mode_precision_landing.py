@@ -55,6 +55,9 @@ class ModePrecisionLanding(Node):
         self.initial_y = None
         self.initial_z = None
 
+
+        self.start_yaw = None
+
         # landing detection
         self.lnd_vel_ewma_initial = 1.0 # m/s, initial velocity for the EWMA filter, start with a high velocity so landing is not triggered immediately
         self.lnd_vel_emwa_z = self.lnd_vel_ewma_initial # m/s, current filtered velocity
@@ -78,8 +81,6 @@ class ModePrecisionLanding(Node):
 
         self.desired_yaw = None # rad
         self.desired_ar_id = None
-
-        self.start_yaw = None
 
         self.vehicle_odom_ = None
 
@@ -107,8 +108,7 @@ class ModePrecisionLanding(Node):
                 self.landing_finished = False
                 self.get_logger().info(f'Landing mode started')
 
-                if self.desired_yaw is None:
-                    self.desired_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
+                self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
 
                 self.initial_x = self.vehicle_odom_.position[0]
                 self.initial_y = self.vehicle_odom_.position[1]
