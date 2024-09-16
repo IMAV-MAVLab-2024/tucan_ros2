@@ -67,6 +67,8 @@ class MarkerDetector(Node):
         self.previous_y_global = 0
         self.previous_z_global = 0
 
+        self.previous_yaw = 0
+
         self.previous_id = 0
 
         self.vehicle_odometry = None
@@ -116,9 +118,15 @@ class MarkerDetector(Node):
                     tvec_cam = tvec_cam[0][0]
 
                     tvec_frd = np.dot(R_frd_cam, tvec_cam) + t_frd_cam
+                    rvec_frd = np.dot(R_frd_cam, rvec_cam) 
                     
                     # rotate realtive vector to the NED frame from the body frame
-                    tvec_ned = np.matmul(R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix(), tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
+                    R_ned_frd = R.from_quat([self.vehicle_odometry.q[1], self.vehicle_odometry.q[2], self.vehicle_odometry.q[3], self.vehicle_odometry.q[0]]).as_matrix()
+                    tvec_ned = np.matmul(R_ned_frd, tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
+                    r_vec_ned = np.matmul(R_ned_frd, rvec_frd)
+
+                    # get the yaw of the rotation vector
+                    yaw = R.from_quat(r_vec_ned).as_euler()[2]
 
                     # NED frame position
                     pos_x = tvec_ned[0]
@@ -152,6 +160,9 @@ class MarkerDetector(Node):
                 msg.x_global = float(pos_x)  # ned
                 msg.y_global = float(pos_y)  # ned
                 msg.z_global = float(pos_z)  # ned
+                msg.yaw = float(yaw)
+
+                self.previous_yaw = msg.yaw
 
                 self.aruco_positions[markerID] = (pos_x, pos_y, pos_z)
 
@@ -168,6 +179,7 @@ class MarkerDetector(Node):
             msg.x_global = float(self.previous_x_global)
             msg.y_global = float(self.previous_y_global)
             msg.z_global = float(self.previous_z_global)
+            msg.yaw = float(self.previous_yaw)
             msg.last_detection_timestamp = self.last_detection_timestamp
             self.ar_detection_publisher.publish(msg)
             self.get_logger().debug("Publishing: Marker ID: %d X: %d Y: %d Detected: %s" % 

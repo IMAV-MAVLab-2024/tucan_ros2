@@ -11,7 +11,7 @@ class ModeVerticalGate(Node):
     """
     def __init__(self):
         super().__init__('mode_vertical_gate')
-        self.mode = 4 # Gate mode ID is 4, DON'T CHANGE
+        self.mode = Mode.VERTICAL_GATE # Gate mode ID is 4, DON'T CHANGE
         self.declare_parameter('which_gate', 'top')
         self.gate = self.get_parameter('which_gate').get_parameter_value().string_value
         self.state_subscriber = self.create_subscription(Mode,'/active_mode_id', self.__listener_callback,1)

@@ -72,7 +72,7 @@ class MissionDirector(Node):
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.HOVER  
                 #run for 20 seconds
-                if time.time() - self.start_start_time > 5:
+                if time.time() - self.start_start_time > 10:
                     self.__state = 'land'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
