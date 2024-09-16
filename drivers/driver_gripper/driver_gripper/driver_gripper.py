@@ -30,7 +30,7 @@ class DriverGripper(Node):
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
-        self.us_cont_stop = 2928
+        self.us_cont_stop = 1800
 
         self.rollup_duration = 3.5
         self.engage_duration = 0.25
@@ -38,7 +38,7 @@ class DriverGripper(Node):
         wiringpi.wiringPiSetup()
 
         self.pin_cont = 5
-        self.pin_clutch = 8
+        self.pin_clutch = 13
 
         wiringpi.pinMode(self.pin_cont, wiringpi.GPIO.PWM_OUTPUT)
         wiringpi.pwmSetMode(self.pin_cont, wiringpi.GPIO.PWM_MODE_MS)
