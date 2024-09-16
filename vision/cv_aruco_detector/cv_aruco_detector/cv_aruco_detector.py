@@ -35,6 +35,7 @@ R_frd_cam = np.array([[0, -1,  0], # rotation matrix camera to front-right-down
 
 t_frd_cam = np.array([-0.06, 0.0, 0.0], dtype=np.float32) # translation vector from camera to front-right-down
 
+# dictionary with aruco ID as key and marker size in m as value
 marker_size_dict = {
     100: 0.15, # Start
     105: 0.15, # Photography
