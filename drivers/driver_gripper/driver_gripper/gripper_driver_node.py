@@ -25,29 +25,35 @@ class DriverGripper(Node):
         self.timer = self.create_timer(1/self.frequency, self.__publish_status)
 
         # Clutch and continuous control settings
-        us_clutch_engaged = 1650
-        us_clutch_disengaged = 1350
+        self.us_clutch_engaged = 1500
+        self.us_clutch_disengaged = 1600
 
-        us_cont_rollup = 1028
-        us_cont_rolloff = 1978
-        us_cont_stop = 2928
+        self.us_cont_rollup = 1028
+        self.us_cont_rolloff = 1978
+        self.us_cont_stop = 2928
 
-        rollup_duration = 3.5
-        rolloff_duration = 0.25
+        self.rollup_duration = 3.5
+        self.engage_duration = 0.25
 
         wiringpi.wiringPiSetup()
 
-        self.pwm1_pin = 5
-        self.pwm2_pin = 8
+        self.pin_cont = 5
+        self.pin_clutch = 8
 
-
-        wiringpi.pinMode(self.pwm1_pin, wiringpi.GPIO.PWM_OUTPUT)
-
-        wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+        wiringpi.pinMode(self.pin_cont, wiringpi.GPIO.PWM_OUTPUT)
+        wiringpi.pwmSetMode(self.pin_cont, wiringpi.GPIO.PWM_MODE_MS)
+        wiringpi.pinMode(self.pin_clutch, wiringpi.GPIO.PWM_OUTPUT)
+        wiringpi.pwmSetMode(self.pin_clutch, wiringpi.GPIO.PWM_MODE_MS)
 
         # Set PWM range and clock
-        wiringpi.pwmSetRange(1024)  # Set range (0-1023 for example)
-        wiringpi.pwmSetClock(400)   # Adjust clock for frequency control
+        self.pwm_range = 1024
+        wiringpi.pwmSetRange(self.pin_cont, self.pwm_range)  # Set range (0-1023 for example)
+        wiringpi.pwmSetRange(self.pin_clutch, self.pwm_range)  # Set range (0-1023 for example)
+        self.servo_frequency = 50
+        wiringpi.pwmSetClock(self.pin_cont, self.servo_frequency)   # Adjust clock for frequency control
+        wiringpi.pwmSetClock(self.pin_clutch, self.servo_frequency)   # Adjust clock for frequency control
+
+        self.timer = None
 
     
     def __publish_status(self):
@@ -56,27 +62,46 @@ class DriverGripper(Node):
     def __listener_callback(self, msg):
         if msg.command == tucan_msgs.GripperCommand.OPEN:
             if self.status.status == tucan_msgs.GripperStatus.CLOSED:
-                self.__gripper_open()
-                self.status.status = tucan_msgs.GripperStatus.OPENING
+                self.__gripper_start_open()
             else:
                 self.get_logger().info('Gripper not in closed state, cannot open')
         elif msg.command == tucan_msgs.GripperCommand.CLOSE:
             if self.status.status == tucan_msgs.GripperStatus.OPENED:
-                self.__gripper_close()
-                self.status.status = tucan_msgs.GripperStatus.CLOSING
+                self.__gripper_start_close()
             else:
                 self.get_logger().info('Gripper not in open state, cannot close')
     
     def __gripper_start_open(self):
-        wiringpi.pwmWrite
+        self.status.status = tucan_msgs.GripperStatus.OPENING
+        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_engaged)
+        wiringpi.pwmWrite(self.pin_cont, self.us_cont_rollup)
+        self.__publish_status()
 
-    # Function to control the PWM duty cycle
-    def set_pwm_duty_cycle(self, duty_cycle):
-        wiringpi.pwmWrite(self.pwm1_pin, duty_cycle)
-
-        
+        self.timer = self.create_timer(self.rollup_duration, self.__gripper_finish_open)
     
-    def __gripper_close(self):
+    def __gripper_finish_open(self):
+        wiringpi.pwmWrite(self.pin_cont, self.us_cont_stop)
+        self.status.status = tucan_msgs.GripperStatus.OPENED
+        self.__publish_status()
+        self.timer.cancel()
+
+    def __gripper_start_close(self):
+        self.status.status = tucan_msgs.GripperStatus.CLOSING
+        wiringpi.pwmWrite(self.pin_clutch, self.us_clutch_disengaged)
+        self.__publish_status()
+
+        self.timer = self.create_timer(self.engage_duration, self.__gripper_finish_close)
+
+    def __gripper_finish_close(self):
+        self.status.status = tucan_msgs.GripperStatus.CLOSED
+        self.__publish_status()
+        self.timer.cancel()
+
+
+    def set_pwm_duty_cycle(self, pin, pulse_width_us):
+        time_per_step = (1/self.servo_frequency * 10**6) / self.pwm_range  # Calculate time per step
+        duty_cycle_value = int(pulse_width_us / time_per_step)  # Convert us to PWM value
+        wiringpi.pwmWrite(pin, duty_cycle_value)
     
 def main(args=None):
     rclpy.init(args=args)
