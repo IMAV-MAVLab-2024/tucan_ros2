@@ -6,6 +6,8 @@ uint16 id # id of the marker (set to zero only if there never has been a marker 
 int32 x # x position of the marker in the image
 int32 y # y position of the marker in the image
 
+float32 yaw # radians of the ned yaw of the ar marker
+
 float32 x_global # x position of the marker in the real world
 float32 y_global # y position of the marker in the real world
 float32 z_global # z position of the marker in the real world
