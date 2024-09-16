@@ -28,6 +28,8 @@ class MissionDirector(Node):
         self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_precision_landing/desired_id', 1)
         self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, 'mode_line_follower/desired_id', 1)
 
+        self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_photographer/desired_id',1)
+
         self.start_time = None
 
         self.currently_active_mode_id = Mode.NO_MODE
@@ -121,18 +123,63 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.TAKEOFF
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'land2'
+                    self.__state = 'hover_start_before_photographer'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
-            case 'land2':      
-                self.land_ar_id_pub.publish(std_msgs.Int32(data=303))
+            case 'hover_start_before_photographer':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=303))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi/2)))
+                self.currently_active_mode_id = Mode.HOVER  
+                #run for 10 seconds
+                if time.time() - self.start_time > 10:
+                    self.__state = 'line_follower_photographer'
+                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+            
+            case 'line_follower_photographer':
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=302))
+                self.currently_active_mode_id = Mode.LINE_FOLLOWER  
+                if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'hover_end_before_photographer'
+                    self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
+                    self.start_time = time.time()   
+
+            case 'hover_end_before_photographer':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi/2)))
+                self.currently_active_mode_id = Mode.HOVER  
+                #run for 10 seconds
+                if time.time() - self.start_time > 10:
+                    self.__state = 'task_photographer'
+                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')             
+
+            case 'task_photographer':
+                self.photographer_ar_id_pub.publish(std_msgs.Int32(data=302))
+                self.currently_active_mode_id = Mode.WILDLIFE_PHOTOGRAPHER
+
+                if self.mode_feedback_.mode.mode_id == Mode.WILDLIFE_PHOTOGRAPHER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'hover_after_photographer'
+                    self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
+                    self.start_time = time.time()
+
+            case 'hover_after_photographer':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
+                self.currently_active_mode_id = Mode.HOVER  
+                #run for 10 seconds
+                if time.time() - self.start_time > 5:
+                    self.__state = 'land_final`'
+                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')                
+            
+            case 'land_final':
+                self.land_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'mission_finished'
                     self.get_logger().info(f'Landing finished, switching to: {self.__state}')
-            
+                    self.start_time = time.time()                
+
             case 'mission_finished':
                 pass
 

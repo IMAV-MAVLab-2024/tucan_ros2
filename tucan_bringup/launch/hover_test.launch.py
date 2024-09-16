@@ -63,6 +63,10 @@ def generate_launch_description():
         package='mode_line_follower',
         executable='mode_line_follower',
     )
+    photographer_mode = Node(
+        package='mode_wildlife_photographer',
+        executable='mode_wildlife_photographer',
+    )
     
     # Mission director - simple experiment edition
     mission_director = Node(
@@ -91,6 +95,7 @@ def generate_launch_description():
     ld.add_action(hover_node)
     ld.add_action(landing_node)
     ld.add_action(line_mode)
+    ld.add_action(photographer_mode)
     
     # ld.add_action(land_node)
     
