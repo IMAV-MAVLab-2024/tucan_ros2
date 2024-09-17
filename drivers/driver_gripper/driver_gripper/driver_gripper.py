@@ -99,9 +99,11 @@ class DriverGripper(Node):
         self.get_logger().info('Gripper closing')
         self.status.status = tucan_msgs.GripperStatus.CLOSING
         self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_disengaged)
+        self.set_pwm_duty_cycle(self.pin_clutch, self.us_cont_rolloff)
         self.__publish_status()
 
         time.sleep(self.engage_duration)
+        self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_stop)
         self.status.status = tucan_msgs.GripperStatus.CLOSED
         self.__publish_status()
 
