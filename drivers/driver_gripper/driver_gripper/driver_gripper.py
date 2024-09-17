@@ -33,7 +33,7 @@ class DriverGripper(Node):
 
         # Clutch and continuous control settings
         self.us_clutch_engaged = 1300
-        self.us_clutch_disengaged = 1500
+        self.us_clutch_disengaged = 1400
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
