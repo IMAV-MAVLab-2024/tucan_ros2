@@ -56,7 +56,7 @@ private:
 	rclcpp::Subscription<Mode>::SharedPtr mission_state_subscriber;
 	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_odom_subscriber_;
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_subscriber_;
-	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr desired_altitude_subscriber_;
+	rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr desired_altitude_subscriber_;
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
@@ -69,7 +69,7 @@ private:
 	void vehicle_odom_callback(const VehicleOdometry& msg);
 	void vehicle_status_callback(const VehicleStatus& msg);
 	void takeoff();
-	void desired_altitude_callback(const std_msgs::msg::Int32::SharedPtr msg);
+	void desired_altitude_callback(const std_msgs::msg::FLoat32::SharedPtr msg);
 };
 
 #endif

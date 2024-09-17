@@ -68,7 +68,7 @@ ModeTakeoff::ModeTakeoff() :
 
 	mission_state_subscriber = this->create_subscription<Mode>("/active_mode_id", 1, std::bind(&ModeTakeoff::mission_state_callback, this, std::placeholders::_1));
 
-	desired_altitude_subscriber_ = this->create_subscription<std_msgs::msg::Int32>("mode_takeoff/desired_altitude", 1, std::bind(&ModeTakeoff::desired_altitude_callback, this, std::placeholders::_1));
+	desired_altitude_subscriber_ = this->create_subscription<std_msgs::msg::Float32>("mode_takeoff/desired_altitude", 1, std::bind(&ModeTakeoff::desired_altitude_callback, this, std::placeholders::_1));
 	
 	
 	vehicle_odom_subscriber_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&ModeTakeoff::vehicle_odom_callback, this, std::placeholders::_1));
@@ -161,7 +161,7 @@ void ModeTakeoff::publish_mode_status()
 	mode_status_publisher_->publish(msg);
 }
 
-void ModeTakeoff::desired_altitude_callback(const std_msgs::msg::Int32::SharedPtr msg)
+void ModeTakeoff::desired_altitude_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
 	altitude_ = msg->data;
 }
