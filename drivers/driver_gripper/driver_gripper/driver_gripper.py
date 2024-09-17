@@ -7,12 +7,15 @@ import tucan_msgs.msg as tucan_msgs
 
 import wiringpi, time
 
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup
+
 class DriverGripper(Node):
     """Gripper driver node
     """
     def __init__(self):
         super().__init__('driver_gripper')
-        self.gripper_status_publisher = self.create_publisher(tucan_msgs.GripperStatus, 'gripper_status', 1)
+        self.gripper_status_publisher = self.create_publisher(tucan_msgs.GripperStatus, 'gripper_status', 1, callback_group=ReentrantCallbackGroup())
         
         self.command_gripper = self.create_subscription(tucan_msgs.GripperCommand,"cmd_gripper", self.__listener_callback, 1)
         
@@ -56,8 +59,6 @@ class DriverGripper(Node):
         wiringpi.pwmSetClock(self.pin_cont, pwmFrequency)   # Adjust clock for frequency control
         wiringpi.pwmSetClock(self.pin_clutch, pwmFrequency)   # Adjust clock for frequency control
 
-        self.timer = None
-
         self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_engaged)
         self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_stop)
 
@@ -83,26 +84,20 @@ class DriverGripper(Node):
         self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_rollup)
         self.__publish_status()
 
-        self.timer = self.create_timer(self.rollup_duration, self.__gripper_finish_open)
-    
-    def __gripper_finish_open(self):
+        time.sleep(self.rollup_duration)
+
         self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_stop)
         self.status.status = tucan_msgs.GripperStatus.OPENED
         self.__publish_status()
-        self.timer.cancel()
 
     def __gripper_start_close(self):
         self.status.status = tucan_msgs.GripperStatus.CLOSING
         self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_disengaged)
         self.__publish_status()
 
-        self.timer = self.create_timer(self.engage_duration, self.__gripper_finish_close)
-
-    def __gripper_finish_close(self):
+        time.sleep(self.engage_duration)
         self.status.status = tucan_msgs.GripperStatus.CLOSED
         self.__publish_status()
-        self.timer.cancel()
-
 
     def set_pwm_duty_cycle(self, pin, pulse_width_us):
         time_per_step = (1/self.servo_frequency * 10**6) / self.pwm_range  # Calculate time per step
@@ -114,9 +109,10 @@ class DriverGripper(Node):
 def main(args=None):
     rclpy.init(args=args)
     gripper_driver_node = DriverGripper()
+    executor = MultiThreadedExecutor()
 
     try:
-        rclpy.spin(gripper_driver_node)
+        executor.spin(gripper_driver_node)
     except KeyboardInterrupt:
         pass
     
