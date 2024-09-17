@@ -162,7 +162,7 @@ class MarkerDetector(Node):
                     tvec_ned = np.matmul(R_ned_frd, tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
 
                     # get the yaw from the direction vector
-                    yaw = yaw_z + self.quat_get_yaw(self.vehicle_odom_.q)
+                    yaw = yaw_z + self.quat_get_yaw(self.vehicle_odometry.q)
 
                     # NED frame position
                     pos_x = tvec_ned[0]
