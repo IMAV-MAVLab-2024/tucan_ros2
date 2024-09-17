@@ -30,7 +30,7 @@ class DriverGripper(Node):
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
-        self.us_cont_stop = 1800
+        self.us_cont_stop = 2978
 
         self.rollup_duration = 2.0 # 3.5
         self.engage_duration = 0.25
