@@ -103,7 +103,7 @@ void ModeLineFollower::publish_setpoint()
 		y_desired = vehicle_odom_.position[1] + forward_gain * y_forward_dir;
 	}
 
-	msg.position = {x_desired, y_desired, desired_altitude};
+	msg.position = {x_desired, y_desired, -desired_altitude};
 	msg.yaw = yaw_reference; // relative?
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	setpoint_publisher_->publish(msg);

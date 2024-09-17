@@ -42,7 +42,7 @@ private:
 	float lateral_vel;			   	// Lateral velocity in m/s 
 	float yaw_reference;			// Yaw reference in radians
 
-	float desired_altitude = -1.5; // Takeoff altitude in meters (negative up)
+	float desired_altitude = 1.5; // Takeoff altitude in meters (negative up)
 
 	// Liming
 	float x_picture;
