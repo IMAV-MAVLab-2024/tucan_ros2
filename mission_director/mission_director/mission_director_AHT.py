@@ -48,8 +48,10 @@ class MissionDirector(Node):
 
         self.timer = self.create_timer(1/self.frequency, self.__run_state_machine)
 
+        self.hover_time = 5.
+
         self.start_marker_id = 100
-        self.end_marker_id = 105
+        self.end_marker_id = 300
 
 
     def __run_state_machine(self):
@@ -75,7 +77,7 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.HOVER
 
                 #run for 10 seconds
-                if time.time() - self.start_time > 10:
+                if time.time() - self.start_time > self.hover_time:
                     self.__state = 'line_follower'
                     self.get_logger().info(f'hover_stay finished, switching to: {self.__state}')
                     self.start_time = time.time()
@@ -91,12 +93,12 @@ class MissionDirector(Node):
             
             case 'hover_end':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.end_marker_id))
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.)))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
                 self.currently_active_mode_id = Mode.HOVER 
 
                 #run for 10 seconds
-                if time.time() - self.start_time > 10:
+                if time.time() - self.start_time > self.hover_time:
                     self.__state = 'land'
                     self.get_logger().info(f'hover_end finished, switching to: {self.__state}')
                     self.start_time = time.time()                
