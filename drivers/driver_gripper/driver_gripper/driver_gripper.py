@@ -32,8 +32,8 @@ class DriverGripper(Node):
         self.timer = self.create_timer(1/self.frequency, self.__publish_status)
 
         # Clutch and continuous control settings
-        self.us_clutch_engaged = 1300
-        self.us_clutch_disengaged = 1400
+        self.us_clutch_engaged = 1100
+        self.us_clutch_disengaged = 1200
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
