@@ -33,7 +33,7 @@ class DriverGripper(Node):
 
         # Clutch and continuous control settings
         self.us_clutch_engaged = 1100
-        self.us_clutch_disengaged = 1200
+        self.us_clutch_disengaged = 1400
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
@@ -99,7 +99,7 @@ class DriverGripper(Node):
         self.get_logger().info('Gripper closing')
         self.status.status = tucan_msgs.GripperStatus.CLOSING
         self.set_pwm_duty_cycle(self.pin_clutch, self.us_clutch_disengaged)
-        self.set_pwm_duty_cycle(self.pin_clutch, self.us_cont_rolloff)
+        self.set_pwm_duty_cycle(self.pin_cont, self.us_cont_rolloff)
         self.__publish_status()
 
         time.sleep(self.engage_duration)
