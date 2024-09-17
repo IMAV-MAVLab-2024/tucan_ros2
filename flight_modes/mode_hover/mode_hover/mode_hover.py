@@ -24,7 +24,7 @@ class ModeHover(Node):
     def __init__(self):
         super().__init__('mode_hover')
         self.get_logger().info('ModeHover initialized')
-        self.mode = tucan_msgs.Mode.HOVER # Hover mode ID is 1, DON'T CHANGE
+        self.mode = tucan_msgs.Mode.HOVER
         self.__frequency = 10 # Frequency in Hz
 
         qos_profile = QoSProfile(
@@ -38,9 +38,9 @@ class ModeHover(Node):
         
         self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
-        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_relative_yaw", self.desired_yaw_callback, 5)
-        self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_hover/desired_altitude", self.desired_alt_callback, 5)
-        self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_hover/desired_id", self.desired_id_callback, 5)
+        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "/mode_hover/desired_relative_yaw", self.desired_yaw_callback, 5)
+        self.alt_subscriber = self.create_subscription(std_msgs.Float32, "/mode_hover/desired_altitude", self.desired_alt_callback, 5)
+        self.id_subscriber = self.create_subscription(std_msgs.Int32, "/mode_hover/desired_id", self.desired_id_callback, 5)
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         

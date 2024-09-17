@@ -22,13 +22,14 @@ class MissionDirector(Node):
         self.state_publisher = self.create_publisher(std_msgs.String, '/mission_state', 1)
         self.fm_finish_subscriber = self.create_subscription(ModeStatus,'/mode_status', self.__mode_status_callback, 1)
 
-        self.hover_desired_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_hover/desired_relative_yaw', 1)
+        self.hover_desired_yaw_pub = self.create_publisher(std_msgs.Float32, '/mode_hover/desired_relative_yaw', 1)
+        self.hover_altitude_pub = self.create_publisher(std_msgs.Float32, 'mode_hover/desired_altitude', 1)
 
-        self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_hover/desired_id', 1)
-        self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_precision_landing/desired_id', 1)
-        self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, 'mode_line_follower/desired_id', 1)
+        self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_hover/desired_id', 1)
+        self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_precision_landing/desired_id', 1)
+        self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, '/mode_line_follower/desired_id', 1)
 
-        self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_photographer/desired_id',1)
+        self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_photographer/desired_id',1)
 
         self.start_time = None
 
@@ -41,6 +42,8 @@ class MissionDirector(Node):
         self.__state = "start"
 
         self.timer = self.create_timer(1/self.frequency, self.__run_state_machine)
+
+        self.marker_id = 100
 
 
     def __run_state_machine(self):
@@ -59,10 +62,9 @@ class MissionDirector(Node):
                     self.start_time = time.time()
 
             case 'hover_left':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=100))
-                self.currently_active_mode_id = Mode.HOVER  #
-
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(-math.pi/2)))
+                self.currently_active_mode_id = Mode.HOVER
 
                 #run for 20 seconds
                 if time.time() - self.start_time > 10:
@@ -71,11 +73,20 @@ class MissionDirector(Node):
                     self.start_time = time.time()
 
             case 'hover_forward':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=100))
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
                 self.currently_active_mode_id = Mode.HOVER 
 
-                elapsed_time = time.time() - self.start_time
+                #run for 20 seconds
+                if time.time() - self.start_time > 10:
+                    self.__state = 'hover_upward'
+                    self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
+
+            case 'hover_upward':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(2.0)))
+                self.currently_active_mode_id = Mode.HOVER 
 
                 #run for 20 seconds
                 if time.time() - self.start_time > 10:
@@ -83,7 +94,7 @@ class MissionDirector(Node):
                     self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
 
             case 'land':      
-                self.land_ar_id_pub.publish(std_msgs.Int32(data=100))
+                self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
