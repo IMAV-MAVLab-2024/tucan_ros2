@@ -319,6 +319,7 @@ class MissionDirector(Node):
                     self.start_start_time = time.time()
             
             case 'mission_finished':
+                self.get_logger().info(f'MISSION ENDED')
                 pass
 
         
