@@ -156,6 +156,7 @@ class MissionDirector(Node):
             case 'hover_gate_end':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['gate_end'])) # Hover over after gate marker
                 self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['after_gate']))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=1.75)) # middle gate
                 self.currently_active_mode_id = Mode.HOVER  
                 #run for 10 seconds
                 if time.time() - self.start_start_time > self.hover_time:
