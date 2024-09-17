@@ -246,8 +246,7 @@ class ModePrecisionLanding(Node):
             if self.ar_yaw is None or self.desired_yaw is None:
                 desired_yaw = self.start_yaw
             else:
-                current_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
-                desired_yaw = current_yaw + self.ar_yaw + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
+                desired_yaw = self.ar_yaw + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
 
             msg.position = [float(x_desired), float(y_desired), float(z_desired)]
             #self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
