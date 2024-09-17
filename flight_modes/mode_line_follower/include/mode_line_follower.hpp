@@ -60,7 +60,7 @@ private:
 	float last_line_time_tolerance = 2.0;   // s, how long to use the last AR marker position after it has been lost	
 
 	const float sideward_gain = 0.2; // m
-	const float forward_gain = 0.4; // m
+	const float forward_gain = 0.2; // m
 
 	const float ar_tolerance = 1.5; // Tolerance in meters for AR marker detection. Exit condition.
 	const float ar_tolerance_sq = ar_tolerance * ar_tolerance;
