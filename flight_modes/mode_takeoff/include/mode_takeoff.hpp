@@ -9,7 +9,7 @@
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
