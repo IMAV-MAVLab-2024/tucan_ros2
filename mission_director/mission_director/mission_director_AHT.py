@@ -47,7 +47,8 @@ class MissionDirector(Node):
 
         self.timer = self.create_timer(1/self.frequency, self.__run_state_machine)
 
-        self.marker_id = 100
+        self.start_marker_id = 100
+        self.end_marker_id = 105
 
 
     def __run_state_machine(self):
@@ -67,56 +68,39 @@ class MissionDirector(Node):
                     self.start_time = time.time()
 
             case 'hover_stay':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.start_marker_id))
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
                 self.currently_active_mode_id = Mode.HOVER
 
-                #run for 20 seconds
-                if time.time() - self.start_time > 5:
-                    self.__state = 'land'
-                    self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
-                    self.start_time = time.time()               
-
-            case 'hover_left':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(-math.pi/2)))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
-                self.currently_active_mode_id = Mode.HOVER
-
-                #run for 20 seconds
+                #run for 10 seconds
                 if time.time() - self.start_time > 10:
-                    self.__state = 'hover_forward'
-                    self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
+                    self.__state = 'hover_left'
+                    self.get_logger().info(f'hover_stay finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
-            case 'hover_forward':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
+            case 'line_follower':
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=self.end_marker_id))
+                self.line_follower_altitude_pub.publish(std_msgs.Float32(data=1.0))
+                self.currently_active_mode_id = Mode.LINE_FOLLOWER  
+                if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'hover_end'
+                    self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
+                    self.start_time = time.time()
+            
+            case 'hover_end':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.end_marker_id))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(0.5)))
                 self.currently_active_mode_id = Mode.HOVER 
 
-                #run for 20 seconds
+                #run for 10 seconds
                 if time.time() - self.start_time > 10:
                     self.__state = 'land'
-                    self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
-                    self.start_time = time.time()
-
-            case 'hover_upward':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
-                self.currently_active_mode_id = Mode.HOVER 
-
-                #run for 20 seconds
-                if time.time() - self.start_time > 10:
-                    self.__state = 'land'
-                    self.get_logger().info(f'hover_downward finished, switching to: {self.__state}')
-                    self.start_time = time.time()
+                    self.get_logger().info(f'hover_end finished, switching to: {self.__state}')
+                    self.start_time = time.time()                
 
             case 'land':      
-                self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
-                self.land_desired_pub.publish(std_msgs.Float32(data=float(math.pi)))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:

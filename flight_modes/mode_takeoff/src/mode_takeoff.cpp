@@ -44,6 +44,7 @@
 #include <px4_msgs/srv/vehicle_command.hpp>
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
+#include <tucan_msgs/msg/ar_marker.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
@@ -56,9 +57,14 @@ using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
 using namespace px4_frame_transforms_lib::frame_transforms::utils::quaternion;
 
+using std::placeholders::_1;
+
 ModeTakeoff::ModeTakeoff() :
 		Node("mode_takeoff"),
-		mode_status_(MODE_INACTIVE),
+		altitude_{1.0},
+		takeoff_x_{0.0},
+		takeoff_y_{0.0},
+		mode_status_{MODE_INACTIVE},
 		mode_status_publisher_{this->create_publisher<ModeStatus>("/mode_status", 1)},
 		offboard_control_mode_publisher_{this->create_publisher<OffboardControlMode>("/offboard_control_mode", 1)},
 		trajectory_setpoint_publisher_{this->create_publisher<TrajectorySetpoint>("/trajectory_setpoint", 1)}
@@ -66,15 +72,20 @@ ModeTakeoff::ModeTakeoff() :
 	rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
 
-	mission_state_subscriber = this->create_subscription<Mode>("/active_mode_id", 1, std::bind(&ModeTakeoff::mission_state_callback, this, std::placeholders::_1));
+	mission_state_subscriber = this->create_subscription<Mode>("/active_mode_id", 1, std::bind(&ModeTakeoff::mission_state_callback, this, _1));
 
-	desired_altitude_subscriber_ = this->create_subscription<std_msgs::msg::Float32>("mode_takeoff/desired_altitude", 1, std::bind(&ModeTakeoff::desired_altitude_callback, this, std::placeholders::_1));
+	desired_altitude_subscriber_ = this->create_subscription<std_msgs::msg::Float32>("mode_takeoff/desired_altitude", 1, std::bind(&ModeTakeoff::desired_altitude_callback, this, _1));
 	
 	
-	vehicle_odom_subscriber_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&ModeTakeoff::vehicle_odom_callback, this, std::placeholders::_1));
-	vehicle_status_subscriber_ = this->create_subscription<VehicleStatus>("fmu/out/vehicle_status", qos, std::bind(&ModeTakeoff::vehicle_status_callback, this, std::placeholders::_1));
+	vehicle_odom_subscriber_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&ModeTakeoff::vehicle_odom_callback, this, _1));
+	vehicle_status_subscriber_ = this->create_subscription<VehicleStatus>("fmu/out/vehicle_status", qos, std::bind(&ModeTakeoff::vehicle_status_callback, this, _1));
+
+	ar_marker_id_subscriber_ = this->create_subscription<std_msgs::msg::Int32>("mode_takeoff/desired_id", 5, std::bind(&ModeTakeoff::process_ar_id_msg, this, _1));
+	ar_detector_subscriber_ = this->create_subscription<ARMarker>("/cv_aruco_detection", 10, std::bind(&ModeTakeoff::process_ar_msg, this, _1));
 
 	RCLCPP_INFO(this->get_logger(), "Starting Takeoff mode");
+
+	clock = this->get_clock();
 
 	timer_ = this->create_wall_timer(250ms, std::bind(&ModeTakeoff::timer_callback, this));
 }
@@ -130,7 +141,7 @@ void ModeTakeoff::publish_offboard_position_mode()
 	msg.acceleration = false;
 	msg.attitude = false;
 	msg.body_rate = false;
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = clock->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
 }
 
@@ -145,7 +156,7 @@ void ModeTakeoff::publish_trajectory_setpoint()
 	TrajectorySetpoint msg{};
 	msg.position = {takeoff_x_, takeoff_y_, z_position};
 	msg.yaw = takeoff_yaw_; // [-PI:PI]
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = clock->now().nanoseconds() / 1000;
 	trajectory_setpoint_publisher_->publish(msg);
 }
 
@@ -159,6 +170,42 @@ void ModeTakeoff::publish_mode_status()
 	msg.mode_status = mode_status_;
 	msg.busy = busy_;
 	mode_status_publisher_->publish(msg);
+}
+
+void ModeTakeoff::process_ar_id_msg(const std_msgs::msg::Int32::SharedPtr msg)
+{
+	desired_ar_id = msg->data;
+}
+
+void ModeTakeoff::process_ar_msg(const ARMarker::SharedPtr msg)
+{
+	if (mode_status_ == MODE_ACTIVE)
+	{
+		if (msg->detected){
+			if (desired_ar_id == -1 || desired_ar_id == msg->id){
+				takeoff_x_ = msg->x_global;
+				takeoff_y_ = msg->y_global;
+			}
+		}
+		else if (msg->id != 0)
+		{
+			// Get the current time
+			rclcpp::Time now = clock->now();
+
+			// Let's assume `time_difference` is a rclcpp::Duration object
+			rclcpp::Duration time_difference = now - msg->last_detection_timestamp;  // 1.5 seconds as an example
+
+			// Convert the result to seconds (nanoseconds are represented as int64_t)
+			double time_difference_seconds = time_difference.seconds();
+
+			if (time_difference_seconds < last_ar_time_tolerance){
+				if (desired_ar_id == -1 || desired_ar_id == msg->id){
+					takeoff_x_ = msg->x_global;
+					takeoff_y_ = msg->y_global;
+				}
+			}
+		}
+	}
 }
 
 void ModeTakeoff::desired_altitude_callback(const std_msgs::msg::Float32::SharedPtr msg)

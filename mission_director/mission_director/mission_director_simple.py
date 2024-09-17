@@ -22,6 +22,8 @@ class MissionDirector(Node):
         self.state_publisher = self.create_publisher(std_msgs.String, '/mission_state', 1)
         self.fm_finish_subscriber = self.create_subscription(ModeStatus,'/mode_status', self.__mode_status_callback, 1)
 
+        self.takeoff_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_takeoff/desired_id', 1)
+
         self.hover_desired_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_hover/desired_relative_yaw', 1)
 
         self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, 'mode_hover/desired_id', 1)
@@ -52,6 +54,7 @@ class MissionDirector(Node):
                 
             case 'takeoff':
                 self.currently_active_mode_id = Mode.TAKEOFF
+                self.takeoff_ar_id_pub.publish(std_msgs.Int32(data=302))
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_left'
