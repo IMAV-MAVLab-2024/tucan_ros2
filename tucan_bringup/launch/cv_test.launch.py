@@ -67,12 +67,6 @@ def generate_launch_description():
         executable='mode_line_follower',
     )
 
-    line_mode = Node(
-        package='miss',
-        executable='mode_line_follower',
-    )
-
-
     # Mission director - simple experiment edition
     mission_director = Node(
         package='mission_director',
