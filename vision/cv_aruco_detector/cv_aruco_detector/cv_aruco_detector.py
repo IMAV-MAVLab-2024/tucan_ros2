@@ -101,7 +101,6 @@ class MarkerDetector(Node):
     
     def vehicle_odometry_callback(self, msg):
         """Callback function for vehicle_odometry topic subscriber."""
-        self.get_logger().info("Vehicle Odometry Callback")
         self.vehicle_odometry = msg
 
     def ImageLoop(self,data):
@@ -163,6 +162,8 @@ class MarkerDetector(Node):
                     tvec_ned = np.matmul(R_ned_frd, tvec_frd) + np.array([self.vehicle_odometry.position[0], self.vehicle_odometry.position[1], self.vehicle_odometry.position[2]])
 
                     # get the yaw from the direction vector
+                    self.get_logger().info("yaw_z: %f" % yaw_z)
+                    self.get_logger().info("current odom yaw: %f" % self.quat_get_yaw(self.vehicle_odometry.q))
                     yaw = yaw_z + self.quat_get_yaw(self.vehicle_odometry.q)
 
                     # NED frame position
