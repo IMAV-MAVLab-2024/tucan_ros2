@@ -69,7 +69,7 @@ private:
 	void vehicle_odom_callback(const VehicleOdometry& msg);
 	void vehicle_status_callback(const VehicleStatus& msg);
 	void takeoff();
-	void desired_altitude_callback(const std_msgs::msg::FLoat32::SharedPtr msg);
+	void desired_altitude_callback(const std_msgs::msg::Float32::SharedPtr msg);
 };
 
 #endif
