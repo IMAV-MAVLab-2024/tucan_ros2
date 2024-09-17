@@ -9,12 +9,13 @@ class DriverCamera(Node):
     def __init__(self):
         super().__init__('camera_driver_node')
         # Default for laptop testing
-        self.declare_parameter('camera_id', 22)  # down = 22, front = 31, laptop = 0
+        self.declare_parameter('camera_id', 0)  # down = 22, front = 31, laptop = 0
         self.declare_parameter('compress', False)
         self.declare_parameter('FPS', 15)
         self.declare_parameter('frame_width', 800)
         self.declare_parameter('frame_height', 600)
         self.declare_parameter('topic_name', "/camera_image")
+        self.declare_parameter('exposure_setting', -4)
 
         self.compress = self.get_parameter('compress').get_parameter_value().bool_value
         self.frame_height = self.get_parameter('frame_height').get_parameter_value().integer_value
@@ -22,6 +23,7 @@ class DriverCamera(Node):
         self.FPS = self.get_parameter('FPS').get_parameter_value().integer_value
         self.camera_id = self.get_parameter('camera_id').get_parameter_value().integer_value
         self.topic_name = self.get_parameter('topic_name').get_parameter_value().string_value
+        self.exposure_setting = self.get_parameter('exposure_setting',).get_parameter_value().integer_value
 
         self.get_logger().info('Starting camera driver node with the following parameters:')
         self.get_logger().info('Camera ID: ' + str(self.camera_id))
@@ -30,6 +32,7 @@ class DriverCamera(Node):
         self.get_logger().info('Frame Width: ' + str(self.frame_width))
         self.get_logger().info('Frame Height: ' + str(self.frame_height))
         self.get_logger().info('Topic Name: ' + str(self.topic_name))
+        self.get_logger().info('Exposure setting: ' + str(self.exposure_setting))
 
         self.cap = cv2.VideoCapture(self.camera_id)
         if not self.cap.isOpened():
@@ -46,6 +49,10 @@ class DriverCamera(Node):
             self.get_logger().error('Failed to set buffer size')
         if not self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('N', 'V', '1', '2')):
             self.get_logger().error('Failed to set fourcc code')
+        if not self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1):
+            self.get_logger().error('Failed to disable autoexposure')
+        if not self.cap.set(cv2.CAP_PROP_EXPOSURE, self.exposure_setting):
+            self.get_logger().error(f'Failed to set exposure setting {self.exposure_setting}')
         self.get_logger().error(f"fourcc {self.cap.get(cv2.CAP_PROP_CODEC_PIXEL_FORMAT)}")
 
 

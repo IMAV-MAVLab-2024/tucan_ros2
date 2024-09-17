@@ -62,9 +62,21 @@ class MissionDirector(Node):
                 self.takeoff_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'hover_left'
+                    self.__state = 'hover_stay'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
                     self.start_time = time.time()
+
+            case 'hover_stay':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
+                self.currently_active_mode_id = Mode.HOVER
+
+                #run for 20 seconds
+                if time.time() - self.start_time > 5:
+                    self.__state = 'hover_left'
+                    self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
+                    self.start_time = time.time()               
 
             case 'hover_left':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
@@ -88,6 +100,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_time > 10:
                     self.__state = 'hover_upward'
                     self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
+                    self.start_time = time.time()
 
             case 'hover_upward':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
@@ -98,7 +111,8 @@ class MissionDirector(Node):
                 #run for 20 seconds
                 if time.time() - self.start_time > 10:
                     self.__state = 'land'
-                    self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
+                    self.get_logger().info(f'hover_downward finished, switching to: {self.__state}')
+                    self.start_time = time.time()
 
             case 'land':      
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
