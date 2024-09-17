@@ -31,6 +31,8 @@ class MissionDirector(Node):
 
         self.takeoff_altitude_pub = self.create_publisher(std_msgs.Float32, '/mode_takeoff/desired_altitude', 1)
 
+        self.land_desired_pub = self.create_publisher(std_msgs.Float32, '/mode_precision_landing/desired_relative_yaw', 1)
+
         self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_photographer/desired_id',1)
 
         self.start_time = None
@@ -90,7 +92,7 @@ class MissionDirector(Node):
             case 'hover_upward':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.5)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(0.5)))
                 self.currently_active_mode_id = Mode.HOVER 
 
                 #run for 20 seconds
@@ -100,6 +102,7 @@ class MissionDirector(Node):
 
             case 'land':      
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
+                self.land_desired_pub.publish(std_msgs.Float32(data=float(0.)))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
