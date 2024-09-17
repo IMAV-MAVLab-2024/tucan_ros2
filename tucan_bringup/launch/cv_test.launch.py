@@ -21,8 +21,8 @@ def generate_launch_description():
             {"camera_id": 22},
             {"compress": False},
             {"FPS": 30},
-            {"frame_width": 600},
-            {"frame_height": 400},
+            {"frame_width": 720},
+            {"frame_height": 576},
             {"topic_name": "/down_camera_image"}
         ],
         name='down_cam_driver'
@@ -36,8 +36,8 @@ def generate_launch_description():
             {"camera_id": 31},
             {"compress": False},
             {"FPS": 2},
-            {"frame_width": 800},
-            {"frame_height": 600},
+            {"frame_width": 720},
+            {"frame_height": 576},
             {"topic_name": "/front_camera_image"}
         ],
         name='front_cam_driver'
@@ -59,7 +59,25 @@ def generate_launch_description():
         executable='offboard_handler',
     )
 
+    line_mode = Node(
+        package='mode_line_follower',
+        executable='mode_line_follower',
+    )
+
+    line_mode = Node(
+        package='miss',
+        executable='mode_line_follower',
+    )
+
+
+    # Mission director - simple experiment edition
+    mission_director = Node(
+        package='mission_director',
+        executable='mission_director_simple',
+    )
+
     # Add all the actions
+    ld.add_action(line_mode)
     ld.add_action(front_camera_driver_node)
     ld.add_action(down_camera_driver_node)
     

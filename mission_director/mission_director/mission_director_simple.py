@@ -49,7 +49,7 @@ class MissionDirector(Node):
         # State machine implementation
         match self.__state:
             case 'start':
-                self.__state = 'takeoff'
+                self.__state = 'line_follower'
                 self.get_logger().info(f'Switching to {self.__state} mode')
                 
             case 'takeoff':
@@ -86,10 +86,10 @@ class MissionDirector(Node):
                     self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
 
             case 'line_follower':
-                self.line_follower_id_pub.publish(std_msgs.Int32(data=303))
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=800))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'hover_end'
+                    self.__state = 'line_follower'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
