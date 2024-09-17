@@ -30,7 +30,7 @@ class DriverGripper(Node):
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
-        self.us_cont_stop = 2928
+        self.us_cont_stop = 1800
 
         self.rollup_duration = 3.5
         self.engage_duration = 0.25
@@ -45,13 +45,16 @@ class DriverGripper(Node):
         wiringpi.pinMode(self.pin_clutch, wiringpi.GPIO.PWM_OUTPUT)
         wiringpi.pwmSetMode(self.pin_clutch, wiringpi.GPIO.PWM_MODE_MS)
 
+
         # Set PWM range and clock
-        self.pwm_range = 1024
+        self.pwm_range = 1000
         wiringpi.pwmSetRange(self.pin_cont, self.pwm_range)  # Set range (0-1023 for example)
         wiringpi.pwmSetRange(self.pin_clutch, self.pwm_range)  # Set range (0-1023 for example)
         self.servo_frequency = 50
-        wiringpi.pwmSetClock(self.pin_cont, self.servo_frequency)   # Adjust clock for frequency control
-        wiringpi.pwmSetClock(self.pin_clutch, self.servo_frequency)   # Adjust clock for frequency control
+        self.pwm_clock = 24000000
+        pwmFrequency = self.pwm_clock / self.servo_frequency / self.pwm_range
+        wiringpi.pwmSetClock(self.pin_cont, pwmFrequency)   # Adjust clock for frequency control
+        wiringpi.pwmSetClock(self.pin_clutch, pwmFrequency)   # Adjust clock for frequency control
 
         self.timer = None
 
@@ -103,9 +106,9 @@ class DriverGripper(Node):
 
     def set_pwm_duty_cycle(self, pin, pulse_width_us):
         time_per_step = (1/self.servo_frequency * 10**6) / self.pwm_range  # Calculate time per step
-        self.get_logger().info(f'Time per step: {time_per_step}')
+        self.get_logger().debug(f'Time per step: {time_per_step}')
         duty_cycle_value = int(pulse_width_us / time_per_step)  # Convert us to PWM value
-        self.get_logger().info(f'Pulse width: {pulse_width_us}, Duty cycle: {duty_cycle_value}')
+        self.get_logger().debug(f'Pulse width: {pulse_width_us}, Duty cycle: {duty_cycle_value}')
         wiringpi.pwmWrite(pin, duty_cycle_value)
     
 def main(args=None):
