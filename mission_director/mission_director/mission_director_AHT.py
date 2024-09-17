@@ -105,7 +105,7 @@ class MissionDirector(Node):
             case 'hover_upward':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(0.5)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
                 self.currently_active_mode_id = Mode.HOVER 
 
                 #run for 20 seconds
