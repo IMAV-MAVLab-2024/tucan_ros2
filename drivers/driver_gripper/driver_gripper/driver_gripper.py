@@ -32,7 +32,7 @@ class DriverGripper(Node):
         self.timer = self.create_timer(1/self.frequency, self.__publish_status)
 
         # Clutch and continuous control settings
-        self.us_clutch_engaged = 1350
+        self.us_clutch_engaged = 1420
         self.us_clutch_disengaged = 1750
 
         self.us_cont_rollup = 1028
@@ -119,7 +119,6 @@ def main(args=None):
     gripper_driver_node = DriverGripper()
     executor = MultiThreadedExecutor()
 
-    
     try:
         rclpy.spin(gripper_driver_node, executor=executor)
     except KeyboardInterrupt:
