@@ -98,7 +98,7 @@ class MissionDirector(Node):
 
                 #run for 20 seconds
                 if time.time() - self.start_time > 10:
-                    self.__state = 'hover_upward'
+                    self.__state = 'land'
                     self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
