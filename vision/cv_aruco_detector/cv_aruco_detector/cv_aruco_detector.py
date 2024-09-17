@@ -101,6 +101,7 @@ class MarkerDetector(Node):
     
     def vehicle_odometry_callback(self, msg):
         """Callback function for vehicle_odometry topic subscriber."""
+        self.get_logger().info("Vehicle Odometry Callback")
         self.vehicle_odometry = msg
 
     def ImageLoop(self,data):
