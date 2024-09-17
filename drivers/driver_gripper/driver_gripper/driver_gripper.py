@@ -25,14 +25,14 @@ class DriverGripper(Node):
         self.timer = self.create_timer(1/self.frequency, self.__publish_status)
 
         # Clutch and continuous control settings
-        self.us_clutch_engaged = 1500
+        self.us_clutch_engaged = 1800
         self.us_clutch_disengaged = 1600
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
-        self.us_cont_stop = 1800
+        self.us_cont_stop = 1500
 
-        self.rollup_duration = 3.5
+        self.rollup_duration = 2.0 # 3.5
         self.engage_duration = 0.25
 
         wiringpi.wiringPiSetup()
@@ -50,8 +50,9 @@ class DriverGripper(Node):
         wiringpi.pwmSetRange(self.pin_cont, self.pwm_range)  # Set range (0-1023 for example)
         wiringpi.pwmSetRange(self.pin_clutch, self.pwm_range)  # Set range (0-1023 for example)
         self.servo_frequency = 50
-        wiringpi.pwmSetClock(self.pin_cont, self.servo_frequency)   # Adjust clock for frequency control
-        wiringpi.pwmSetClock(self.pin_clutch, self.servo_frequency)   # Adjust clock for frequency control
+        self.clock = int(24000000 / (self.servo_frequency * self.pwm_range))
+        wiringpi.pwmSetClock(self.pin_cont, self.clock)   # Adjust clock for frequency control
+        wiringpi.pwmSetClock(self.pin_clutch, self.clock)   # Adjust clock for frequency control
 
         self.timer = None
 
