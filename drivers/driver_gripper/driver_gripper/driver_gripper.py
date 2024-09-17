@@ -10,6 +10,10 @@ import wiringpi, time
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
 
+from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
+
+import sys
+
 class DriverGripper(Node):
     """Gripper driver node
     """
@@ -111,10 +115,13 @@ def main(args=None):
     gripper_driver_node = DriverGripper()
     executor = MultiThreadedExecutor()
 
+    
     try:
-        executor.spin(gripper_driver_node)
+        rclpy.spin(gripper_driver_node, executor=executor)
     except KeyboardInterrupt:
         pass
+    except ExternalShutdownException:
+        sys.exit(1)
     
     gripper_driver_node.destroy_node()
     rclpy.shutdown()
