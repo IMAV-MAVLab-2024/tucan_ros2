@@ -19,9 +19,9 @@ class DriverGripper(Node):
     """
     def __init__(self):
         super().__init__('driver_gripper')
-        self.gripper_status_publisher = self.create_publisher(tucan_msgs.GripperStatus, 'gripper_status', 1, callback_group=ReentrantCallbackGroup())
+        self.gripper_status_publisher = self.create_publisher(tucan_msgs.GripperStatus, 'gripper_status', 1)
         
-        self.command_gripper = self.create_subscription(tucan_msgs.GripperCommand,"cmd_gripper", self.__listener_callback, 1)
+        self.command_gripper = self.create_subscription(tucan_msgs.GripperCommand,"cmd_gripper", self.__listener_callback, 1, callback_group=ReentrantCallbackGroup())
         
         # settings
         self.frequency = 5
