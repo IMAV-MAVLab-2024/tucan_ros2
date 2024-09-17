@@ -16,16 +16,14 @@ from builtin_interfaces.msg import Time as HeaderTime
 
 import std_msgs.msg as std_msgs
 
-class ModeHover(Node):
-    """flight mode to hover above an AR marker.
-    Runs a timer that publishes the mode status every 1/frequency seconds and if node is set to active, publishes velocity setpoints.
-    Has a small internal control loop that adjusts the velocity setpoints based on the AR marker position. If no marker is detected, keeps position.
+class ModeWildlifePhotographer(Node):
+    """flight mode to do wildlife photography task
+    Orients the drone towards the screen, takes a bunch of pictures and then hands back control to the MD
     """
     def __init__(self):
-        super().__init__('mode_hover')
-        self.get_logger().info('ModeHover initialized')
+        super().__init__('mode_wildlife_photographer')
+        self.get_logger().info('Mode photography task initialized')
         self.mode = tucan_msgs.Mode.WILDLIFE_PHOTOGRAPHER 
-        self.__frequency = 10 # Frequency in Hz
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -42,6 +40,7 @@ class ModeHover(Node):
         self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
         self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_wildlife_photographer/desired_altitude", self.desired_alt_callback, 5)
+        self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_photographer/desired_id", self.desired_id_callback, 5)
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
@@ -56,17 +55,19 @@ class ModeHover(Node):
         self.ar_y = 0.
         self.ar_z = 0.
 
+        self.yaw_tolerance = 0.1
+
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
         
         # settings
         self.forward_pos_gain = 0.2
         self.sideways_pos_gain = 0.2
         
-        self.start_yaw = None
-        self.ar_yaw = None # rad
+        self.start_yaw = 0.
+        self.ar_yaw = 0. # rad
         self.desired_yaw = -math.pi/2 # rad
         self.desired_alt = 1.2 # m
-        self.desired_ar_id = 105
+        self.desired_ar_id = 105 # Set to 105 for competition
 
         self.vehicle_odom_position_ = None
         
@@ -82,24 +83,21 @@ class ModeHover(Node):
         self.mode_status_publisher_.publish(msg)
         
     def state_callback(self, msg):
-        # Activate node if mission state is idle
         if msg.mode_id == self.mode:
             if self.is_active == False:
                 self.is_active = True
                 self.publish_mode_status()
-                self.get_logger().info(f'Hover mode started')
+                self.get_logger().info(f'Photography mode started')
 
                 self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
         else:
-            if self.is_active:
-                self.ar_yaw = None
-                self.start_yaw = None
             self.is_active = False
         
     def AR_callback(self, msg):
         # Update the 
         if self.is_active:
             if not self.photo_taken:
+                self.get_logger().info('No photo taken, aligning to wildlife')
                 if msg.detected:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                         # offsets are between -0.5 and 0.5 and flipped to the FRD frame
@@ -129,6 +127,7 @@ class ModeHover(Node):
                 
                 # Check if yaw is achieved
                 if self.ar_yaw + math.pi/2 < self.yaw_tolerance:
+                    self.get_logger().info('Taking photos')
                     self.take_photo()
                     self.take_photo_counter+=1
                 
@@ -141,7 +140,9 @@ class ModeHover(Node):
             self.publish_offboard_position_mode()
 
     def take_photo(self):
-        self.take_photo_publisher.publish(True)
+        photo_msg = std_msgs.Bool()
+        photo_msg.data = True
+        self.take_photo_publisher.publish(photo_msg)
         
     def vehicle_odom_callback(self, msg):
         self.vehicle_odom_ = msg
@@ -182,15 +183,18 @@ class ModeHover(Node):
         q_y = q[2]
         q_z = q[3]
         return math.atan2(2.0 * (q_w * q_z + q_x * q_y), 1.0 - 2.0 * (q_y * q_y + q_z * q_z))
-        
+    
+    def desired_id_callback(self, msg):
+        self.desired_ar_id = msg.data
+
 def main(args=None):
     rclpy.init(args=args)
 
-    mode_hover = ModeHover()
+    mode_photographer = ModeWildlifePhotographer()
 
-    rclpy.spin(mode_hover)
+    rclpy.spin(mode_photographer)
 
-    mode_hover.destroy_node()
+    mode_photographer.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':

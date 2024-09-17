@@ -25,20 +25,20 @@ class DriverGripper(Node):
         self.timer = self.create_timer(1/self.frequency, self.__publish_status)
 
         # Clutch and continuous control settings
-        self.us_clutch_engaged = 1500
+        self.us_clutch_engaged = 1800
         self.us_clutch_disengaged = 1600
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
         self.us_cont_stop = 1800
 
-        self.rollup_duration = 3.5
+        self.rollup_duration = 2.0 # 3.5
         self.engage_duration = 0.25
 
         wiringpi.wiringPiSetup()
 
         self.pin_cont = 5
-        self.pin_clutch = 8
+        self.pin_clutch = 13
 
         wiringpi.pinMode(self.pin_cont, wiringpi.GPIO.PWM_OUTPUT)
         wiringpi.pwmSetMode(self.pin_cont, wiringpi.GPIO.PWM_MODE_MS)
