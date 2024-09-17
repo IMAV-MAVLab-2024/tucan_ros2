@@ -68,7 +68,7 @@ class ModePrecisionLanding(Node):
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
         
         # settings
-        self.landing_speed_gain = 0.015 # m, how far the position setpoint should be from the current position of the drone, translates proportionally to landing speed
+        self.landing_speed_gain = 0.035 # m, how far the position setpoint should be from the current position of the drone, translates proportionally to landing speed
 
         self.desired_yaw = None # rad
         self.desired_ar_id = None
@@ -187,7 +187,7 @@ class ModePrecisionLanding(Node):
             if self.landing_started:
                 x_desired = self.ar_x
                 y_desired = self.ar_y
-                z_desired = self.vehicle_odom_.position[1] + self.landing_speed_gain
+                z_desired = self.vehicle_odom_.position[2] + self.landing_speed_gain
             else:
                 x_desired = self.ar_x
                 y_desired = self.ar_y
