@@ -54,7 +54,7 @@ class DriverGripper(Node):
 
 
         # Set PWM range and clock
-        self.pwm_range = 1000
+        self.pwm_range = 4000
         wiringpi.pwmSetRange(self.pin_cont, self.pwm_range)  # Set range (0-1023 for example)
         wiringpi.pwmSetRange(self.pin_clutch, self.pwm_range)  # Set range (0-1023 for example)
         self.servo_frequency = 50
