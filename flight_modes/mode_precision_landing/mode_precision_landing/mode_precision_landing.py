@@ -30,6 +30,9 @@ class ModePrecisionLanding(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1
         )
+
+        self.armed_subscriber_ = self.create_subscription(px4_msgs.VehicleStatus, "/fmu/out/vehicle_status", self.vehicle_status_callback, qos_profile=qos_profile)
+
         
         self.is_active = False
         
@@ -55,19 +58,7 @@ class ModePrecisionLanding(Node):
         self.initial_y = None
         self.initial_z = None
 
-
         self.start_yaw = None
-
-        # landing detection
-        self.lnd_vel_ewma_initial = 1.0 # m/s, initial velocity for the EWMA filter, start with a high velocity so landing is not triggered immediately
-        self.lnd_vel_emwa_z = self.lnd_vel_ewma_initial # m/s, current filtered velocity
-        self.lnd_vel_ewma_alpha = 0.2
-        self.lnd_vel_z_threshold = 0.1 # m/s, if the drone is moving slower than this, we are landed
-        self.lnd_time_threshold = 1.5 # s, how long the drone has to be moving slower than lnd_vel_z_threshold before we are landed
-        self.maybe_landed = False
-        self.maybe_landed_start_time = None
-        self.lnd_detect_frequency = 10 # Hz
-        self.lnd_detect_timer = None
 
         self.landing_started = False
         self.landing_finished = False
@@ -166,50 +157,11 @@ class ModePrecisionLanding(Node):
         self.vehicle_odom_ = msg
         
         if self.is_active and self.landing_started:
-            self.publish_trajectory_setpoint()
+            self.publish_trajectory_setpoint() 
 
-    def lnd_detect_callback(self):
-        if self.is_active and self.landing_started:
-
-            self.lnd_vel_emwa_z = self.lnd_vel_ewma_alpha * self.vehicle_odom_.velocity[2] + (1 - self.lnd_vel_ewma_alpha) * self.lnd_vel_emwa_z
-
-            self.get_logger().debug(f'Maybe landed: {self.maybe_landed}, lnd vel z: {self.lnd_vel_emwa_z}')
-            if not self.maybe_landed:
-                if abs(self.lnd_vel_emwa_z) < self.lnd_vel_z_threshold:
-                    self.maybe_landed = True
-                    self.maybe_landed_start_time = self.get_clock().now()
-            else:
-                if abs(self.lnd_vel_emwa_z) < self.lnd_vel_z_threshold:
-                    time_difference = self.get_clock().now() - self.maybe_landed_start_time
-
-                    self.get_logger().debug(f'Time difference: {time_difference.nanoseconds * 1e-9}')
-
-                    if time_difference.nanoseconds * 1e-9 > self.lnd_time_threshold:
-                        self.landing_finished = True
-                        self.get_logger().info('Landing finished')
-
-                        self.publish_mode_status()
-
-                        msg_disarm = px4_msgs.VehicleCommand()
-                        msg_disarm.command = px4_msgs.VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM
-                        msg_disarm.param1 = float(px4_msgs.VehicleCommand.ARMING_ACTION_DISARM)
-                        msg_disarm.param2 = float(21196) #force disarm
-
-                        msg_disarm.target_system = 1
-                        msg_disarm.target_component = 1
-                        msg_disarm.source_system = 1
-                        msg_disarm.source_component = 1
-                        msg_disarm.from_external = True
-                        msg_disarm.timestamp = int(self.get_clock().now().nanoseconds / 1000)
-
-                        self.vehicle_command_publisher_.publish(msg_disarm)
-
-                        self.lnd_detect_timer.cancel()
-                        self.lnd_detect_timer = None
-                else:
-                    self.maybe_landed = False
-                    self.maybe_landed_start_time = None
-            
+    def vehicle_status_callback(self, msg):    
+        if self.landing_started and msg.arming_state == msg.ARMING_STATE_DISARMED:
+            self.landing_finished = True
 
     def desired_yaw_callback(self, msg):
         self.desired_yaw = msg.data
@@ -229,9 +181,7 @@ class ModePrecisionLanding(Node):
             if not self.landing_started:
                 distance = (self.ar_x - self.vehicle_odom_.position[0]) ** 2 + (self.ar_y - self.vehicle_odom_.position[1]) ** 2
                 if distance < self.landing_tolerance_sq:
-                    self.lnd_detect_timer = self.create_timer(1./self.lnd_detect_frequency, self.lnd_detect_callback)
                     self.landing_started = True
-                    self.lnd_vel_emwa_z = self.lnd_vel_ewma_initial # reset the EWMA filter, start with a high velocity so landing is not triggered immediately
                     self.get_logger().info('ar marker reached, Starting landing')
 
             if self.landing_started:
