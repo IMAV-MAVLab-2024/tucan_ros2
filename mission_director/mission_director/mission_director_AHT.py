@@ -28,6 +28,7 @@ class MissionDirector(Node):
         self.hover_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_hover/desired_id', 1)
         self.land_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_precision_landing/desired_id', 1)
         self.line_follower_id_pub = self.create_publisher(std_msgs.Int32, '/mode_line_follower/desired_id', 1)
+        self.line_follower_altitude_pub = self.create_publisher(std_msgs.Float32, '/mode_line_follower/desired_altitude', 1)
 
         self.takeoff_altitude_pub = self.create_publisher(std_msgs.Float32, '/mode_takeoff/desired_altitude', 1)
 
