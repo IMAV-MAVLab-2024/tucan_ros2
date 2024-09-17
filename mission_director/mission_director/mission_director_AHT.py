@@ -75,7 +75,7 @@ class MissionDirector(Node):
 
                 #run for 10 seconds
                 if time.time() - self.start_time > 10:
-                    self.__state = 'hover_left'
+                    self.__state = 'line_follower'
                     self.get_logger().info(f'hover_stay finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
