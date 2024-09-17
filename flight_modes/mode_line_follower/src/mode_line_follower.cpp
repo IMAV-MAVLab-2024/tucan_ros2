@@ -50,9 +50,12 @@
 #include <rclcpp/rclcpp.hpp>
 #include <mode_line_follower.hpp>
 
+#include <px4_frame_transforms_lib/frame_transforms.h>
+
 using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
 using namespace tucan_msgs::msg;
+using namespace px4_frame_transforms_lib::frame_transforms::utils::quaternion;
 
 using std::placeholders::_1;
 
@@ -159,7 +162,7 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 	{
 		if (msg->detected)
 		{
-			yaw_reference = msg->yaw;
+			yaw_reference = alpha*msg->yaw + (1.0-alpha)*yaw_running_average;
 			x_picture = msg->x_picture;
 			y_picture = msg->y_picture;
 			x_offset_dir = msg->x_offset_dir;
@@ -167,6 +170,7 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 			lateral_offset = msg->lateral_offset;
 			publish_setpoint();
 			publish_mode_status();
+			yaw_running_average = yaw_reference;
 		}else{
 			// Get the current time
 			rclcpp::Time now = clock->now();
@@ -178,7 +182,7 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 			double time_difference_seconds = time_difference.seconds();
 
 			if (time_difference_seconds < last_line_time_tolerance){
-				yaw_reference = msg->yaw;
+				yaw_reference = alpha*msg->yaw + (1.0-alpha)*yaw_running_average;
 				x_picture = msg->x_picture;
 				y_picture = msg->y_picture;
 				x_offset_dir = msg->x_offset_dir;
@@ -186,6 +190,7 @@ void ModeLineFollower::process_line_msg(const LineFollower::SharedPtr msg)
 				lateral_offset = msg->lateral_offset;
 				publish_setpoint();
 				publish_mode_status();
+				yaw_running_average = yaw_reference;
 			}
 		}
 	}
@@ -258,8 +263,11 @@ void ModeLineFollower::activate_node()
 	msg.data = true;
 	line_follower_activation_publisher_->publish(msg);
 	mode_status_ = MODE_ACTIVE;
+	yaw_running_average = float(quaternion_get_yaw(array_to_eigen_quat(vehicle_odom_.q)));
 	RCLCPP_INFO(this->get_logger(), "Mode line follower activated");
 }
+
+
 
 void ModeLineFollower::process_ar_id_msg(const std_msgs::msg::Int32::SharedPtr msg)
 {
