@@ -37,7 +37,7 @@ class DriverGripper(Node):
 
         self.us_cont_rollup = 1028
         self.us_cont_rolloff = 1978
-        self.us_cont_stop = 1500
+        self.us_cont_stop = 2978
 
         self.rollup_duration = 2.0 # 3.5
         self.engage_duration = 0.25
@@ -74,13 +74,11 @@ class DriverGripper(Node):
         if msg.command == tucan_msgs.GripperCommand.OPEN:
             if self.status.status == tucan_msgs.GripperStatus.CLOSED:
                 self.__gripper_start_open()
-                self.get_logger().info('open command accepted')
             else:
                 self.get_logger().info('Gripper not in closed state, cannot open')
         elif msg.command == tucan_msgs.GripperCommand.CLOSE:
             if self.status.status == tucan_msgs.GripperStatus.OPENED:
                 self.__gripper_start_close()
-                self.get_logger().info('close command accepted')
             else:
                 self.get_logger().info('Gripper not in open state, cannot close')
     
