@@ -9,6 +9,7 @@
 #include <tucan_msgs/msg/mode.hpp>
 #include <tucan_msgs/msg/mode_status.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/int32.hpp>
 
 using namespace tucan_msgs::msg;
 using namespace px4_msgs::msg;
@@ -55,6 +56,7 @@ private:
 	rclcpp::Subscription<Mode>::SharedPtr mission_state_subscriber;
 	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_odom_subscriber_;
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_subscriber_;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr desired_altitude_subscriber_;
 	rclcpp::Publisher<ModeStatus>::SharedPtr mode_status_publisher_;
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
@@ -67,6 +69,7 @@ private:
 	void vehicle_odom_callback(const VehicleOdometry& msg);
 	void vehicle_status_callback(const VehicleStatus& msg);
 	void takeoff();
+	void desired_altitude_callback(const std_msgs::msg::Int32::SharedPtr msg);
 };
 
 #endif
