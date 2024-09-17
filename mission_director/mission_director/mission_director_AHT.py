@@ -74,7 +74,7 @@ class MissionDirector(Node):
 
                 #run for 20 seconds
                 if time.time() - self.start_time > 5:
-                    self.__state = 'hover_left'
+                    self.__state = 'land'
                     self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
                     self.start_time = time.time()               
 
@@ -116,7 +116,7 @@ class MissionDirector(Node):
 
             case 'land':      
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_id))
-                self.land_desired_pub.publish(std_msgs.Float32(data=float(0.)))
+                self.land_desired_pub.publish(std_msgs.Float32(data=float(math.pi)))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
