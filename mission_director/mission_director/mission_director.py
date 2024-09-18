@@ -285,7 +285,7 @@ class MissionDirector(Node):
 
             case 'line_follower_to_small_platform':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35'])) # Follow the line to the specified land marker
-                self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
+                self.line_follower_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
 
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
@@ -307,7 +307,7 @@ class MissionDirector(Node):
             # ----- CHANGE HERE TO SKIP SAMPLE -----
             case 'line_follower_to_sample':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['sample'])) # Follow the line to the sample
-                self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
+                self.line_follower_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
 
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
@@ -318,7 +318,7 @@ class MissionDirector(Node):
 
             case 'line_follower_to_placement':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['placement']))
-                self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
+                self.line_follower_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
 
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
@@ -329,7 +329,7 @@ class MissionDirector(Node):
 
             case 'line_follower_to_start':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['start']))
-                self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
+                self.line_follower_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
 
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
