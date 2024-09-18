@@ -71,8 +71,11 @@ class ModeVerticalGate(Node):
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
+            if self.is_active == False:
+                self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
             self.is_active = True
-            self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
+        else:
+            self.is_active = False
 
     def timer_callback(self):
         if self.is_active:
