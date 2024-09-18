@@ -42,7 +42,7 @@ private:
 	float lateral_vel;			   	// Lateral velocity in m/s 
 	float yaw_reference;			// Yaw reference in radians
 	float yaw_running_average;		// Running average of the yaw for filtering
-	float alpha = 0.1;
+	float alpha = 0.14;
 
 	float desired_altitude = 1.5; // Takeoff altitude in meters (negative up)
 
@@ -62,7 +62,7 @@ private:
 	float last_line_time_tolerance = 2.0;   // s, how long to use the last AR marker position after it has been lost	
 
 	const float sideward_gain = 0.2; // m
-	const float forward_gain = 0.15; // m
+	const float forward_gain = 0.13; // m
 
 	const float ar_tolerance = 1.5; // Tolerance in meters for AR marker detection. Exit condition.
 	const float ar_tolerance_sq = ar_tolerance * ar_tolerance;
