@@ -97,7 +97,6 @@ class MissionDirector(Node):
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
                 self.currently_active_mode_id = Mode.HOVER 
 
-                #run for 10 seconds
                 if time.time() - self.start_time > self.hover_time:
                     self.__state = 'land'
                     self.get_logger().info(f'hover_end finished, switching to: {self.__state}')
