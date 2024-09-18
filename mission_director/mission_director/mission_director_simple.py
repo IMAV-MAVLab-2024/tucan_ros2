@@ -49,7 +49,7 @@ class MissionDirector(Node):
         # State machine implementation
         match self.__state:
             case 'start':
-                self.__state = 'line_follower'
+                self.__state = 'takeoff'
                 self.get_logger().info(f'Switching to {self.__state} mode')
                 
             case 'takeoff':
@@ -68,7 +68,7 @@ class MissionDirector(Node):
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(-math.pi/2)))
 
                 #run for 20 seconds
-                if time.time() - self.start_time > 5:
+                if time.time() - self.start_time > 20:
                     self.__state = 'hover_forward'
                     self.get_logger().info(f'hover_left finished, switching to: {self.__state}')
                     self.start_time = time.time()
@@ -77,16 +77,15 @@ class MissionDirector(Node):
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=302))
                 self.currently_active_mode_id = Mode.HOVER 
 
-                elapsed_time = time.time() - self.start_time
                 self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
 
                 #run for 20 seconds
-                if time.time() - self.start_time > 5:
+                if time.time() - self.start_time > 20:
                     self.__state = 'line_follower'
                     self.get_logger().info(f'hover_forward finished, switching to: {self.__state}')
 
             case 'line_follower':
-                self.line_follower_id_pub.publish(std_msgs.Int32(data=800))
+                self.line_follower_id_pub.publish(std_msgs.Int32(data=303))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'line_follower'
@@ -106,7 +105,7 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
                 if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'wait'
+                    self.__state = 'mission_finished'
                     self.get_logger().info(f'Landing finished, switching to: {self.__state}')
                     self.start_time = time.time()
 

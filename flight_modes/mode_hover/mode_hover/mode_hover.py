@@ -111,18 +111,17 @@ class ModeHover(Node):
                     # offsets are between -0.5 and 0.5 and flipped to the FRD frame
                     #self.get_logger().info(f'AR marker detected with ID {msg.id}')
                     #self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
-                    if self.emwa_id != msg.id:
+                    # self.get_logger().info(f'Updating AR marker position')
+                    if not self.emwa_id or self.emwa_id != msg.id:
                         self.aruco_x_emwa = msg.x_global
                         self.aruco_y_emwa = msg.y_global
                         self.aruco_z_emwa = msg.z_global
                         self.aruco_yaw_emwa = msg.yaw
 
-                    self.emwa_id = msg.id
-
-                    self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * msg.aruco_x_emwa
-                    self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * msg.aruco_y_emwa
-                    self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * msg.aruco_z_emwa
-                    self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * msg.aruco_yaw_emwa
+                    self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
+                    self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
+                    self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_z_emwa
+                    self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
                     self.emwa_id = msg.id
                     self.publish_trajectory_setpoint()
             elif msg.id != 0: # ie an ar marker has been preiously found
@@ -136,16 +135,17 @@ class ModeHover(Node):
                 if time_difference_seconds < self.last_ar_time_tolerance:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                         #self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
-                        if self.emwa_id != msg.id:
+                        # self.get_logger().info(f'Using old AR marker position')
+                        if not self.emwa_id or self.emwa_id != msg.id:
                             self.aruco_x_emwa = msg.x_global
                             self.aruco_y_emwa = msg.y_global
                             self.aruco_z_emwa = msg.z_global
                             self.aruco_yaw_emwa = msg.yaw
 
-                        self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * msg.aruco_x_emwa
-                        self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * msg.aruco_y_emwa
-                        self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * msg.aruco_z_emwa
-                        self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * msg.aruco_yaw_emwa
+                        self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
+                        self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
+                        self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_z_emwa
+                        self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
                         self.emwa_id = msg.id
                         self.publish_trajectory_setpoint()
 
@@ -171,7 +171,7 @@ class ModeHover(Node):
         y_desired = self.aruco_y_emwa
         z_desired = self.aruco_z_emwa - self.desired_alt
         
-        if self.ar_yaw is None or self.desired_yaw is None:
+        if self.aruco_yaw_emwa is None or self.desired_yaw is None:
             desired_yaw = self.start_yaw
         else:
             desired_yaw = self.aruco_yaw_emwa + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker

@@ -142,10 +142,11 @@ class LineTracker(Node):
                     msg.x_picture = float(center_y)
                     msg.y_picture = float(center_x)
                     
-                    if abs(yaw) > np.deg2rad(6):
-                        msg.yaw = float(yaw + yaw_vehicle)
-                    else:
-                        msg.yaw = float(yaw_vehicle)
+                    # if abs(yaw) > np.deg2rad(6):
+                    #     msg.yaw = float(yaw + yaw_vehicle)
+                    # else:
+                    #     msg.yaw = float(yaw_vehicle)
+                    msg.yaw = float(yaw + yaw_vehicle)
                     self.get_logger().debug("publishing")
 
                     self.previous_yaw = msg.yaw
