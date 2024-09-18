@@ -38,8 +38,9 @@ class MissionDirector(Node):
         self.line_follower_altitude_pub = self.create_publisher(std_msgs.Float32, 'mode_line_follower/desired_altitude', 1)
 
         # Task publishers
-        self.task_photography_id_pub = self.create_publisher(std_msgs.Int32, 'mode_photography/desired_id', 1)
-        self.task_photography_altitude_pub = self.create_publisher(std_msgs.Float32, 'mode_photography/desired_altitude', 1)
+        self.task_photography_id_pub = self.create_publisher(std_msgs.Int32, 'mode_photographer/desired_id', 1)
+        self.task_photography_altitude_pub = self.create_publisher(std_msgs.Float32, 'mode_photographer/desired_altitude', 1)
+        self.task_photography_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_photographer/desired_yaw', 1)
 
         # Gate publishers
         self.task_gate_id_pub = self.create_publisher(std_msgs.Int32, 'mode_gate/desired_id', 1)
@@ -136,6 +137,7 @@ class MissionDirector(Node):
                     self.start_start_time = time.time()
 
             case 'photography':
+                self.task_photography_yaw_pub.publish(std_msgs.Float32(data=float(self.desired_relative_yaw_dict['before_photography'])))
                 self.task_photography_id_pub.publish(std_msgs.Int32(data=self.marker_ids['photography']))
                 self.task_photography_altitude_pub.publish(std_msgs.Float32(data=float(self.hover_altitude)))
                 self.currently_active_mode_id = Mode.WILDLIFE_PHOTOGRAPHER

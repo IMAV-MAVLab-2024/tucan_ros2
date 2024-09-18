@@ -34,7 +34,10 @@ class MissionDirector(Node):
 
         self.land_desired_pub = self.create_publisher(std_msgs.Float32, '/mode_precision_landing/desired_relative_yaw', 1)
 
-        self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_photographer/desired_id',1)
+        self.task_photography_id_pub = self.create_publisher(std_msgs.Int32, 'mode_photographer/desired_id', 1)
+        self.task_photography_altitude_pub = self.create_publisher(std_msgs.Float32, 'mode_photographer/desired_altitude', 1)
+        self.task_photography_yaw_pub = self.create_publisher(std_msgs.Float32, 'mode_photographer/desired_yaw', 1)
+
 
         # Gate publishers
         self.task_gate_id_pub = self.create_publisher(std_msgs.Int32, 'mode_gate/desired_id', 1)
@@ -103,8 +106,19 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.HOVER 
 
                 if time.time() - self.start_time > self.hover_time:
-                    self.__state = 'vertical_gate'
+                    self.__state = 'photography'
                     self.get_logger().info(f'hover_end finished, switching to: {self.__state}')
+                    self.start_time = time.time()
+
+            case 'photography':
+                self.task_photography_id_pub.publish(std_msgs.Int32(data=self.end_marker_id))
+                self.task_photography_altitude_pub.publish(std_msgs.Float32(data=float(0.0)))
+                self.task_photography_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
+                self.currently_active_mode_id = Mode.WILDLIFE_PHOTOGRAPHER
+
+                if self.mode_feedback_.mode.mode_id == Mode.WILDLIFE_PHOTOGRAPHER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'vertical_gate'
+                    self.get_logger().info(f'Photography finished, switching to: {self.__state}')
                     self.start_time = time.time()
 
             case 'vertical_gate':

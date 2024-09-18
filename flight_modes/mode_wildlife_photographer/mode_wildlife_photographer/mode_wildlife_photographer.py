@@ -40,8 +40,9 @@ class ModeWildlifePhotographer(Node):
         
         self.state_subscriber_ = self.create_subscription(tucan_msgs.Mode, "/active_mode_id", self.state_callback, 10)
         self.vehicle_odom_subscriber_ = self.create_subscription(px4_msgs.VehicleOdometry, "/fmu/out/vehicle_odometry", self.vehicle_odom_callback, qos_profile)
-        self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_wildlife_photographer/desired_altitude", self.desired_alt_callback, 5)
+        self.alt_subscriber = self.create_subscription(std_msgs.Float32, "mode_photographer/desired_altitude", self.desired_alt_callback, 5)
         self.id_subscriber = self.create_subscription(std_msgs.Int32, "mode_photographer/desired_id", self.desired_id_callback, 5)
+        self.yaw_subscriber = self.create_subscription(std_msgs.Float32, "mode_photographer/desired_yaw", self.desired_yaw_callback, 5)
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
@@ -79,8 +80,8 @@ class ModeWildlifePhotographer(Node):
         
         self.start_yaw = 0.
         self.ar_yaw = 0. # rad
-        self.desired_yaw = -math.pi/2 # rad
-        self.desired_alt = 1.2 # m
+        self.desired_yaw = math.pi/2 # rad
+        self.desired_alt = 1.5 # m
         self.desired_ar_id = 105 # Set to 105 for competition
 
         self.vehicle_odom_position_ = None
@@ -212,6 +213,9 @@ class ModeWildlifePhotographer(Node):
     
     def desired_id_callback(self, msg):
         self.desired_ar_id = msg.data
+
+    def desired_yaw_callback(self, msg):
+        self.desired_yaw = msg.data
 
 def main(args=None):
     rclpy.init(args=args)
