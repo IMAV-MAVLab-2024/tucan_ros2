@@ -120,7 +120,7 @@ class ModeHover(Node):
 
                     self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
                     self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
-                    self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_z_emwa
+                    self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
                     self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
                     self.emwa_id = msg.id
                     self.publish_trajectory_setpoint()
@@ -144,7 +144,7 @@ class ModeHover(Node):
 
                         self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
                         self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
-                        self.aruco_z_emwa =  self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_z_emwa
+                        self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
                         self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
                         self.emwa_id = msg.id
                         self.publish_trajectory_setpoint()
