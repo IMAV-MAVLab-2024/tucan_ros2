@@ -72,6 +72,7 @@ class ModeVerticalGate(Node):
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
             if self.is_active == False:
+                self.finished = False
                 self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
             self.is_active = True
         else:
@@ -80,21 +81,25 @@ class ModeVerticalGate(Node):
     def timer_callback(self):
         if self.is_active:
             self.publish_mode_status()
-            self.execute()
+            if not self.finished:
+                self.execute()
         
     def publish_mode_status(self):
         msg = ModeStatus()
         msg.mode.mode_id = self.mode
         if self.is_active:
-            msg.mode_status = msg.MODE_ACTIVE
+            if self.finished:
+                msg.mode_status = msg.MODE_FINISHED
+            else:
+                msg.mode_status = msg.MODE_ACTIVE
         else:
-            msg.mode_status = msg.MODE_FINISHED
+            msg.mode_status = msg.MODE_INACTIVE
         msg.busy = self.is_active
         self.mode_status_publisher_.publish(msg)
     
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
-        msg.position = {self.desired_x, self.desired_y, self.target_altitude}
+        msg.position = {self.desired_x, self.desired_y, -self.target_altitude}
         msg.yaw = self.yaw
         self.setpoint_publisher.publish(msg)
     
@@ -114,7 +119,7 @@ class ModeVerticalGate(Node):
         self.last_ar_marker = msg.id
         self.ar_yaw = msg.yaw
         if self.last_ar_marker == self.desired_ar_marker_id:
-            self.is_active = False
+            self.finished = True
 
     def vehicle_odom_callback(self, msg):
         self.vehicle_odom_ = msg
