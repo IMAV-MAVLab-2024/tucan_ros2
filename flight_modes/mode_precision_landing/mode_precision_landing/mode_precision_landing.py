@@ -227,12 +227,12 @@ class ModePrecisionLanding(Node):
                     self.get_logger().info('ar marker reached, Starting landing')
 
             if self.landing_started:
-                x_desired = self.aruco_x_emwa
-                y_desired = self.aruco_y_emwa
+                x_desired = self.ar_x
+                y_desired = self.ar_y
                 z_desired = self.vehicle_odom_.position[2] + self.landing_speed_gain
             else:
-                x_desired = self.aruco_x_emwa
-                y_desired = self.aruco_y_emwa
+                x_desired = self.ar_x
+                y_desired = self.ar_y
                 z_desired = self.initial_z
 
             if self.ar_yaw is None or self.desired_yaw is None:
