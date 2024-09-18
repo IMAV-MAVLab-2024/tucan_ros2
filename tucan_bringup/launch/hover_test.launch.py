@@ -67,6 +67,10 @@ def generate_launch_description():
         package='mode_wildlife_photographer',
         executable='mode_wildlife_photographer',
     )
+    gate_mode = Node(
+        package='mode_vertical_gate',
+        executable='mode_vertical_gate',
+    )
     
     # Mission director - simple experiment edition
     mission_director = Node(
@@ -96,6 +100,7 @@ def generate_launch_description():
     ld.add_action(landing_node)
     ld.add_action(line_mode)
     ld.add_action(photographer_mode)
+    ld.add_action(gate_mode)
     
     # ld.add_action(land_node)
     

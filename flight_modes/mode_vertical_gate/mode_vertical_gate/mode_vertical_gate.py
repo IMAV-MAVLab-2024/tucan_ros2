@@ -47,7 +47,7 @@ class ModeVerticalGate(Node):
         self.last_ar_marker = 0
         
         self.frequency = 10. # Node frequency in Hz
-        self.timer = self.create_timer(1./self.__frequency, self.timer_callback)
+        self.timer = self.create_timer(1./self.frequency, self.timer_callback)
         
         if self.gate == 'top':
             self.target_altitude = 2.1225 # Altitude of the top gate in meters
