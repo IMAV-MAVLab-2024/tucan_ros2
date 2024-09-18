@@ -60,7 +60,7 @@ class ModeHover(Node):
         self.aruco_yaw_emwa = None
 
         self.emwa_id = None
-        self.alpha = 0.3
+        self.alpha = 0.17
         
         # settings
         self.forward_pos_gain = 0.2
@@ -96,7 +96,7 @@ class ModeHover(Node):
         else:
             if self.is_active:
                 self.desired_yaw = None
-                self.ar_yaw = None
+                self.aruco_yaw_emwa = None
                 self.aruco_x_emwa = None
                 self.aruco_y_emwa = None
                 self.aruco_z_emwa = None
