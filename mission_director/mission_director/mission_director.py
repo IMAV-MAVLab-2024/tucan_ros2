@@ -95,7 +95,7 @@ class MissionDirector(Node):
             case 'takeoff_start':
                 self.currently_active_mode_id = Mode.TAKEOFF
                 self.takeoff_desired_id_pub.publish(std_msgs.Int32(data=self.marker_ids['start']))
-                self.takeoff_altitude_pub.publish(std_msgs.Float32(data=1.5))
+                self.takeoff_altitude_pub.publish(std_msgs.Float32(data=float(1.5)))
 
                 if self.mode_feedback_.mode.mode_id == Mode.TAKEOFF and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_start'
@@ -104,7 +104,7 @@ class MissionDirector(Node):
 
             case 'hover_start':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['start'])) # Hover over the start marker
-                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['start']))
+                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=float(self.desired_relative_yaw_dict['start'])))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=float(self.hover_altitude)))
                 self.currently_active_mode_id = Mode.HOVER
 
@@ -187,7 +187,7 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.HOVER  
 
                 if time.time() - self.start_start_time > self.hover_time:
-                    self.__state = 'line_follower_to_platform_landing'
+                    self.__state = 'line_follower_to_large_platform'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
             case 'line_follower_to_large_platform':
@@ -239,7 +239,7 @@ class MissionDirector(Node):
                     self.get_logger().info(f'Landing finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
 
-            case 'wait':      
+            case 'wait':   
                 if time.time() - self.start_start_time > self.wait_time:
                     self.__state = 'arm'
                     self.get_logger().info(f'Wait finished, switching to: {self.__state}')
