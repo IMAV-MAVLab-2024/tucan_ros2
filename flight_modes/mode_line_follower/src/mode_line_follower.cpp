@@ -92,24 +92,38 @@ void ModeLineFollower::publish_setpoint()
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
 
-	float x_forward_dir = cos(yaw_reference);
-	float y_forward_dir = sin(yaw_reference);
+	rclcpp::Duration elapsed_time = this->get_clock()->now() - start_time;
+	if (elapsed_time.seconds() < go_forward_time){
+		float x_forward_dir = cos(start_yaw);
+		float y_forward_dir = sin(start_yaw);
 
-	float x_desired = 0.0;
-	float y_desired = 0.0;
-
-	if (lateral_offset > 50 || lateral_offset < -50){ // towards the right
-		x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
-		y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
-	}else{
 		x_desired = vehicle_odom_.position[0] + forward_gain * x_forward_dir;
 		y_desired = vehicle_odom_.position[1] + forward_gain * y_forward_dir;
-	}
+		
+		msg.position = {x_desired, y_desired, -desired_altitude};
+		msg.yaw = start_yaw; // relative?
+		msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+		setpoint_publisher_->publish(msg);
+	}else{
+		float x_forward_dir = cos(yaw_reference);
+		float y_forward_dir = sin(yaw_reference);
 
-	msg.position = {x_desired, y_desired, -desired_altitude};
-	msg.yaw = yaw_reference; // relative?
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	setpoint_publisher_->publish(msg);
+		float x_desired = 0.0;
+		float y_desired = 0.0;
+
+		if (lateral_offset > 50 || lateral_offset < -50){ // towards the right
+			x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
+			y_desired = vehicle_odom_.position[1] + y_offset_dir * sideward_gain + forward_gain * y_forward_dir;
+		}else{
+			x_desired = vehicle_odom_.position[0] + forward_gain * x_forward_dir;
+			y_desired = vehicle_odom_.position[1] + forward_gain * y_forward_dir;
+		}
+
+		msg.position = {x_desired, y_desired, -desired_altitude};
+		msg.yaw = yaw_reference; // relative?
+		msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+		setpoint_publisher_->publish(msg);
+	}
 }
 
 /**
@@ -259,12 +273,15 @@ void ModeLineFollower::process_altitude_msg(const std_msgs::msg::Float32::Shared
 void ModeLineFollower::activate_node()
 {
 	// activate the cv line detector
+	start_time = this->get_clock()->now();
+	start_yaw = float(quaternion_get_yaw(array_to_eigen_quat(vehicle_odom_.q)));
 	std_msgs::msg::Bool msg;
 	msg.data = true;
 	line_follower_activation_publisher_->publish(msg);
 	mode_status_ = MODE_ACTIVE;
 	yaw_running_average = float(quaternion_get_yaw(array_to_eigen_quat(vehicle_odom_.q)));
 	RCLCPP_INFO(this->get_logger(), "Mode line follower activated");
+	publish_setpoint();
 }
 
 

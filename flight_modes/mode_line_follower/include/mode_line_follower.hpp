@@ -46,6 +46,12 @@ private:
 
 	float desired_altitude = 1.5; // Takeoff altitude in meters (negative up)
 
+	float go_forward_time = 1.0; // s, time to go forward before starting to follow the line
+
+	float start_yaw;
+
+	rclcpp::Time start_time;
+
 	// Liming
 	float x_picture;
 	float y_picture;
