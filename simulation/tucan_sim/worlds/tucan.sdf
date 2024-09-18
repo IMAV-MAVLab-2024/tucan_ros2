@@ -220,7 +220,7 @@
     <include>
       <uri>model://tucan</uri>
       <name>tucan_0</name>
-      <pose>1.5050060688141941e-11 -1.0075775446783284e-11 -0.013000834726258098 -6.8969165954027905e-10 -1.0301905397438528e-09 2.2731083947838917e-17</pose>
+      <pose>1.5048583260631304e-11 -1.0074710455671739e-11 -0.013000827113445301 -6.8960975026573548e-10 -1.0300769062089795e-09 2.2741715229077901e-17</pose>
     </include>
     <include>
       <uri>model://blue_line_straight</uri>
@@ -381,6 +381,11 @@
       <uri>model:///aruco_303</uri>
       <name>aruco_303</name>
       <pose>1.7547139707140424 2.6778575805929372 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://aruco_302</uri>
+      <name>aruco_302_0</name>
+      <pose>1.7883812712288434 3.7429401894135044 0 0 0 0</pose>
     </include>
     <light name='sunUTC' type='directional'>
       <pose>0 0 500 0 0 0</pose>
