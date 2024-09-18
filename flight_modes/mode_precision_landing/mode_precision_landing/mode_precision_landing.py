@@ -16,6 +16,8 @@ from builtin_interfaces.msg import Time as HeaderTime
 
 import std_msgs.msg as std_msgs
 
+import time
+
 class ModePrecisionLanding(Node):
     """Flight mode for landing on an AR marker
     """
@@ -67,6 +69,12 @@ class ModePrecisionLanding(Node):
         self.initial_z = None
 
         self.start_yaw = None
+
+        self.maybe_landed = False
+        self.maybe_landed_start_time = None
+        self.landing_threshhold = 0.15      # m
+        self.landing_time = 1.0             # s
+        self.disarming = False
 
         self.landing_started = False
         self.landing_finished = False
@@ -123,6 +131,8 @@ class ModePrecisionLanding(Node):
                 self.aruco_y_emwa = None
                 self.aruco_z_emwa = None
                 self.emwa_id = None
+                self.maybe_landed = False
+                self.disarming = False
             self.is_active = False
         
     def AR_callback(self, msg):
@@ -189,6 +199,35 @@ class ModePrecisionLanding(Node):
         if self.is_active and self.landing_started:
             self.publish_trajectory_setpoint() 
 
+            if not self.landing_finished and not self.disarming:
+                if self.maybe_landed:
+                    if -msg.position[2] > self.landing_tolerance:
+                        self.maybe_landed = False
+                        self.get_logger().info('maybe landed reset')
+                    elif time.time() - self.maybe_landed_start_time:
+                        self.disarming = True
+                else:
+                    if -msg.position[2] < self.landing_tolerance:
+                        self.maybe_landed = True
+                        self.maybe_landed_start_time = time.time()
+
+                        self.get_logger().info('maybe landed set')
+            if self.disarming:  
+                msg_disarm = px4_msgs.VehicleCommand()  
+                    
+                msg_disarm.command = px4_msgs.VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM
+                msg_disarm.param1 = float(px4_msgs.VehicleCommand.ARMING_ACTION_DISARM)
+                msg_disarm.param2 = float(21196) #force disarm
+
+                msg_disarm.target_system = 1
+                msg_disarm.target_component = 1
+                msg_disarm.source_system = 1
+                msg_disarm.source_component = 1
+                msg_disarm.from_external = True
+                msg_disarm.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+
+                self.vehicle_command_publisher_.publish(msg_disarm)
+
     def vehicle_status_callback(self, msg):    
         if self.landing_started and msg.arming_state == msg.ARMING_STATE_DISARMED:
             self.landing_finished = True
@@ -215,12 +254,12 @@ class ModePrecisionLanding(Node):
                     self.get_logger().info('ar marker reached, Starting landing')
 
             if self.landing_started:
-                x_desired = self.ar_x
-                y_desired = self.ar_y
+                x_desired = self.aruco_x_emwa
+                y_desired = self.aruco_y_emwa
                 z_desired = self.vehicle_odom_.position[2] + self.landing_speed_gain
             else:
-                x_desired = self.ar_x
-                y_desired = self.ar_y
+                x_desired = self.aruco_x_emwa
+                y_desired = self.aruco_y_emwa
                 z_desired = self.initial_z
 
             if self.aruco_yaw_emwa is None or self.desired_yaw is None:
