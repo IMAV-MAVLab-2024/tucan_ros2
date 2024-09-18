@@ -38,7 +38,7 @@ def generate_launch_description():
         package='cv_line_detector',
         executable='cv_line_detector',
         parameters=[
-            {"debug": True}
+            {"debug": False}
         ],
     )
     
