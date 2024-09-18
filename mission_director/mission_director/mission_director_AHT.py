@@ -109,8 +109,20 @@ class MissionDirector(Node):
 
             case 'vertical_gate':
                 self.task_gate_id_pub.publish(std_msgs.Int32(data=self.marker_gate_end)) # publish the marker id after the gate
+
                 self.currently_active_mode_id = Mode.VERTICAL_GATE
                 if self.mode_feedback_.mode.mode_id == Mode.VERTICAL_GATE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'hover_after_gate'
+                    self.get_logger().info(f'Gate finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()   
+
+            case 'hover_after_gate':
+                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_gate_end))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.)))
+                self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
+                
+                self.currently_active_mode_id = Mode.VERTICAL_GATE
+                if time.time() - self.start_time > self.hover_time:
                     self.__state = 'land'
                     self.get_logger().info(f'Gate finished, switching to: {self.__state}')
                     self.start_start_time = time.time()      
