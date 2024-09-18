@@ -71,6 +71,7 @@ class LineTracker(Node):
 
     def ImageLoop(self, data):
         if self.enabled:
+            self.get_logger().debug("Image received")
             msg = LineFollower()
             img = self.bridge_for_CV.imgmsg_to_cv2(data, 'bgr8')
 
@@ -88,6 +89,7 @@ class LineTracker(Node):
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if contours:
+                self.get_logger().debug("contours found")
                 # Find the largest contour
                 largest_contour = max(contours, key=cv2.contourArea)
                 # Fit a line to the largest contour
@@ -114,6 +116,7 @@ class LineTracker(Node):
 
                 # Convert the line center to NED frame
                 if self.vehicle_odometry is not None:
+                    self.get_logger().debug("# Vehicle odometry is not None")
 
                     yaw_vehicle = self.quat_get_yaw(self.vehicle_odometry.q)
 
@@ -143,6 +146,7 @@ class LineTracker(Node):
                         msg.yaw = float(yaw + yaw_vehicle)
                     else:
                         msg.yaw = float(yaw_vehicle)
+                    self.get_logger().debug("publishing")
 
                     self.previous_yaw = msg.yaw
                     self.previous_x_global = msg.x_offset_dir
