@@ -99,9 +99,9 @@ class ModeVerticalGate(Node):
 
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
-        msg.position = {self.desired_x, self.desired_y, -self.target_altitude}
+        msg.position = [float(self.desired_x), float(self.desired_y), float(-self.target_altitude)]
         msg.yaw = self.yaw
-        self.setpoint_publisher.publish(msg)
+        self.setpoint_publisher_.publish(msg)
     
     def publish_offboard_position_mode(self):
         msg = OffboardControlMode()
@@ -110,7 +110,7 @@ class ModeVerticalGate(Node):
         msg.acceleration = False
         msg.attitude = False
         msg.body_rate = False
-        self.control_mode_publisher.publish(msg)
+        self.control_mode_publisher_.publish(msg)
     
     def __odometry_callback(self, msg):
         self.position = msg.position
