@@ -56,22 +56,23 @@ class ModeVerticalGate(Node):
         if self.gate == 'bottom':
             self.target_altitude = 1.0 # Altitude of the bottom gate in meters
         
-        self.forward_speed = 0.5
+        self.forward_setpoint = 0.5
         
     def execute(self):
         """Execute the vertical gate mode.
         """
         # Align drone with the AR marker (relative angle should be pi/2)
-        self.yaw = self.quat_get_yaw(self.vehicle_odom_.q) # Actual yaw is desired yaw for flying forward
+        self.yaw = self.start_yaw # Actual yaw is desired yaw for flying forward
 
-        self.desired_x = self.vehicle_odom_.position[0] + (math.cos(self.yaw)*self.forward_speed/self.frequency)
-        self.desired_y = self.vehicle_odom_.position[1] + (math.sin(self.yaw)*self.forward_speed/self.frequency)
+        self.desired_x = self.vehicle_odom_.position[0] + (math.cos(self.start_yaw)*self.forward_setpoint)
+        self.desired_y = self.vehicle_odom_.position[1] + (math.sin(self.start_yaw)*self.forward_setpoint)
 
         self.publish_trajectory_setpoint()
         
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
             self.is_active = True
+            self.start_yaw = self.quat_get_yaw(self.vehicle_odom_.q)
 
     def timer_callback(self):
         if self.is_active:
