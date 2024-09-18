@@ -56,14 +56,6 @@ class ModePrecisionLanding(Node):
         self.ar_z = None
         self.ar_yaw = None
 
-        self.aruco_x_emwa = None
-        self.aruco_y_emwa = None
-        self.aruco_z_emwa = None
-        self.aruco_yaw_emwa = None
-
-        self.emwa_id = None
-        self.alpha = 0.17
-
         self.initial_x = None
         self.initial_y = None
         self.initial_z = None
@@ -126,11 +118,6 @@ class ModePrecisionLanding(Node):
             if self.is_active:
                 self.desired_yaw = None
                 self.ar_yaw = None
-                self.aruco_yaw_emwa = None
-                self.aruco_x_emwa = None
-                self.aruco_y_emwa = None
-                self.aruco_z_emwa = None
-                self.emwa_id = None
                 self.maybe_landed = False
                 self.disarming = False
             self.is_active = False
@@ -146,17 +133,10 @@ class ModePrecisionLanding(Node):
                     self.get_logger().debug(f'AR marker detected with ID {msg.id}')
                     self.get_logger().debug(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                     
-                    if not self.emwa_id or self.emwa_id != msg.id:
-                        self.aruco_x_emwa = msg.x_global
-                        self.aruco_y_emwa = msg.y_global
-                        self.aruco_z_emwa = msg.z_global
-                        self.aruco_yaw_emwa = msg.yaw
-
-                    self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
-                    self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
-                    self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
-                    self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
-                    self.emwa_id = msg.id
+                    self.ar_x = msg.x_global
+                    self.ar_y = msg.y_global
+                    self.ar_z = msg.z_global
+                    self.ar_yaw = msg.yaw
 
                     trajectory_set = True
                     self.publish_trajectory_setpoint()
@@ -172,17 +152,10 @@ class ModePrecisionLanding(Node):
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                         self.get_logger().debug(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                         
-                        if not self.emwa_id or self.emwa_id != msg.id:
-                            self.aruco_x_emwa = msg.x_global
-                            self.aruco_y_emwa = msg.y_global
-                            self.aruco_z_emwa = msg.z_global
-                            self.aruco_yaw_emwa = msg.yaw
-
-                        self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
-                        self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
-                        self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
-                        self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
-                        self.emwa_id = msg.id
+                        self.ar_x = msg.x_global
+                        self.ar_y = msg.y_global
+                        self.ar_z = msg.z_global
+                        self.ar_yaw = msg.yaw
 
                         trajectory_set = True
                         self.publish_trajectory_setpoint()
@@ -262,10 +235,10 @@ class ModePrecisionLanding(Node):
                 y_desired = self.aruco_y_emwa
                 z_desired = self.initial_z
 
-            if self.aruco_yaw_emwa is None or self.desired_yaw is None:
+            if self.ar_yaw is None or self.desired_yaw is None:
                 desired_yaw = self.start_yaw
             else:
-                desired_yaw = self.aruco_yaw_emwa + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
+                desired_yaw = self.ar_yaw + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
 
 
             msg.position = [float(x_desired), float(y_desired), float(z_desired)]
