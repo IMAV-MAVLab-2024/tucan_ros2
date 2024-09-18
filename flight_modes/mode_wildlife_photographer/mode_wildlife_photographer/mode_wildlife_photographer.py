@@ -15,6 +15,7 @@ from rclpy.time import Time
 from builtin_interfaces.msg import Time as HeaderTime
 
 import std_msgs.msg as std_msgs
+import sensor_msgs.msg as sensor_msgs
 
 class ModeWildlifePhotographer(Node):
     """flight mode to do wildlife photography task
@@ -44,7 +45,8 @@ class ModeWildlifePhotographer(Node):
 
         self.mode_status_publisher_ = self.create_publisher(tucan_msgs.ModeStatus, "/mode_status", 10)
         
-        self.take_photo_publisher = self.create_publisher(std_msgs.Bool, "/take_photo", 10)
+        self.front_cam_sub = self.create_subscription(sensor_msgs.Image, "/front_camera_image", self.front_cam_callback, 5)
+        self.take_photo_publisher = self.create_publisher(sensor_msgs.Image, "/take_photo", 1)
         
         self.setpoint_publisher_ = self.create_publisher(px4_msgs.TrajectorySetpoint, "/trajectory_setpoint", 10)
         self.control_mode_publisher = self.create_publisher(px4_msgs.OffboardControlMode, "/offboard_control_mode", 10)
@@ -67,10 +69,13 @@ class ModeWildlifePhotographer(Node):
         self.emwa_id = None
         self.alpha = 0.17
         
+        self.finished = False
         
         # settings
         self.forward_pos_gain = 0.2
         self.sideways_pos_gain = 0.2
+
+        self.photo_amount = 5
         
         self.start_yaw = 0.
         self.ar_yaw = 0. # rad
@@ -84,7 +89,10 @@ class ModeWildlifePhotographer(Node):
         msg = tucan_msgs.ModeStatus()
         msg.mode.mode_id = self.mode
         if self.is_active:
-            msg.mode_status = msg.MODE_ACTIVE
+            if self.finished:
+                msg.mode_status = msg.MODE_FINISHED
+            else:
+                msg.mode_status = msg.MODE_ACTIVE
         else:
             msg.mode_status = msg.MODE_FINISHED
 
@@ -94,7 +102,10 @@ class ModeWildlifePhotographer(Node):
     def state_callback(self, msg):
         if msg.mode_id == self.mode:
             if self.is_active == False:
+                self.finished = False
+                self.emwa_id = None
                 self.is_active = True
+                self.photo_taken = False
                 self.publish_mode_status()
                 self.get_logger().info(f'Photography mode started')
 
@@ -104,12 +115,12 @@ class ModeWildlifePhotographer(Node):
         
     def AR_callback(self, msg):
         # Update the 
-        if self.is_active:
+        if self.is_active and not self.finished:
             if not self.photo_taken:
                 self.get_logger().info('No photo taken, aligning to wildlife')
                 if msg.detected:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                        if not self.emwa_id or self.emwa_id != msg.id:
+                        if self.emwa_id is None or self.emwa_id != msg.id:
                             self.aruco_x_emwa = msg.x_global
                             self.aruco_y_emwa = msg.y_global
                             self.aruco_z_emwa = msg.z_global
@@ -131,7 +142,7 @@ class ModeWildlifePhotographer(Node):
 
                     if time_difference_seconds < self.last_ar_time_tolerance:
                         if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                            if not self.emwa_id or self.emwa_id != msg.id:
+                            if self.emwa_id is None or self.emwa_id != msg.id:
                                 self.aruco_x_emwa = msg.x_global
                                 self.aruco_y_emwa = msg.y_global
                                 self.aruco_z_emwa = msg.z_global
@@ -143,25 +154,22 @@ class ModeWildlifePhotographer(Node):
                             self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
                             self.emwa_id = msg.id
                             self.publish_trajectory_setpoint()
-                
-                # Check if yaw is achieved
-                if self.ar_yaw + math.pi/2 < self.yaw_tolerance:
-                    self.get_logger().info('Taking photos')
-                    self.take_photo()
-                    self.take_photo_counter+=1
-                
-                if self.take_photo_counter == 10:
-                    self.photo_taken = True
-                    self.get_logger().info("Photography mode completed")
-                    self.is_active = False
                     
             self.publish_mode_status()
             self.publish_offboard_position_mode()
 
-    def take_photo(self):
-        photo_msg = std_msgs.Bool()
-        photo_msg.data = True
-        self.take_photo_publisher.publish(photo_msg)
+    def front_cam_callback(self, msg):
+        if self.is_active and not self.finished:
+            self.get_logger().info('Taking photo')
+            self.take_photo_counter += 1
+
+            self.take_photo_publisher.publish(msg)
+
+            if self.take_photo_counter >= self.photo_amount:
+                self.get_logger().info("Photography mode completed")
+                self.finished = True
+
+                self.publish_mode_status()
         
     def vehicle_odom_callback(self, msg):
         self.vehicle_odom_ = msg

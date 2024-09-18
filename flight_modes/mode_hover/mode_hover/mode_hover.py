@@ -112,7 +112,7 @@ class ModeHover(Node):
                     #self.get_logger().info(f'AR marker detected with ID {msg.id}')
                     #self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                     # self.get_logger().info(f'Updating AR marker position')
-                    if not self.emwa_id or self.emwa_id != msg.id:
+                    if self.emwa_id is None or self.emwa_id != msg.id:
                         self.aruco_x_emwa = msg.x_global
                         self.aruco_y_emwa = msg.y_global
                         self.aruco_z_emwa = msg.z_global
@@ -136,7 +136,7 @@ class ModeHover(Node):
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
                         #self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
                         # self.get_logger().info(f'Using old AR marker position')
-                        if not self.emwa_id or self.emwa_id != msg.id:
+                        if self.emwa_id is None or self.emwa_id != msg.id:
                             self.aruco_x_emwa = msg.x_global
                             self.aruco_y_emwa = msg.y_global
                             self.aruco_z_emwa = msg.z_global
