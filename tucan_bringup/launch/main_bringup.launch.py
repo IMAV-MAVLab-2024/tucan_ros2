@@ -42,12 +42,6 @@ def generate_launch_description():
         ],
         name='front_cam_driver'
     )
-    
-    # Drivers - Gripper
-    gripper_driver_node = Node(
-        package='driver_gripper',
-        executable='gripper_driver_node',
-    )
 
     # === VISION ===
     ar_detection_node = Node(
@@ -60,9 +54,9 @@ def generate_launch_description():
     )
     
     # === FLIGHT MODES ===
-    idle_node = Node(
-        package='mode_idle',
-        executable='mode_idle',
+    arm_node = Node(
+        package='mode_arm',
+        executable='mode_arm',
     )
     hover_node = Node(
         package='mode_hover',
@@ -84,21 +78,12 @@ def generate_launch_description():
         package='mode_precision_landing',
         executable='mode_precision_landing',
     )
-    pickup_node = Node(
-        package='mode_pickup_sample',
-        executable='mode_pickup_sample',
-    )
-    place_node = Node(
-        package='mode_place_sample',
-        executable='mode_place_sample',
-    )    
-    transparent_window_node = Node(
-        package='mode_pass_transparent_window',
-        executable='mode_pass_transparent_window',
-    )
     takeoff_node = Node(
         package='mode_takeoff',
         executable='mode_takeoff',
+        parameters=[
+            {"which_gate": 'middle'}
+        ],
     )        
         
     # === MISSION DIRECTOR ===
@@ -115,20 +100,16 @@ def generate_launch_description():
     # Add all the actions
     ld.add_action(front_camera_driver_node)
     ld.add_action(down_camera_driver_node)
-    ld.add_action(gripper_driver_node)
     
     ld.add_action(ar_detection_node)
     ld.add_action(line_detection_node)
     
-    ld.add_action(idle_node)
+    ld.add_action(arm_node)
     ld.add_action(hover_node)
     ld.add_action(line_follow_node)
     ld.add_action(photography_node)
     ld.add_action(gate_node)
     ld.add_action(land_node)
-    ld.add_action(pickup_node)
-    ld.add_action(place_node)
-    ld.add_action(transparent_window_node)
     ld.add_action(takeoff_node)
 
     ld.add_action(mission_director)
