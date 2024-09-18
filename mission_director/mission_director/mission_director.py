@@ -91,6 +91,7 @@ class MissionDirector(Node):
             case 'start':
                 self.__state = 'takeoff_start'
                 self.get_logger().info(f'Switching to {self.__state} mode')
+                self.start_start_time = time.time()
                 
             case 'takeoff_start':
                 self.currently_active_mode_id = Mode.TAKEOFF
@@ -111,6 +112,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_photography'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'line_follower_to_photography':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['photography'])) # Follow the line to the photography marker
@@ -131,6 +133,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'photography'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'photography':
                 self.task_photography_id_pub.publish(std_msgs.Int32(data=self.marker_ids['photography']))
@@ -151,6 +154,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_gate_start'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'line_follower_to_gate_start':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['gate_start'])) # Follow the line to the photography marker
@@ -160,6 +164,7 @@ class MissionDirector(Node):
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_gate_start'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
                     self.start_start_time = time.time()
 
             case 'hover_gate_start':
@@ -171,6 +176,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'gate'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'gate':
                 self.task_gate_id_pub.publish(std_msgs.Int32(data=self.marker_ids['gate_end'])) # publish the marker id after the gate
@@ -189,6 +195,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_large_platform'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'line_follower_to_large_platform':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_50'])) # Follow the line to the specified land marker
@@ -209,6 +216,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'hover_middle_platform'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'line_follower_to_middle_platform':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35'])) # Follow the line to the specified land marker
@@ -229,6 +237,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'land'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'land':
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35']))
@@ -243,6 +252,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.wait_time:
                     self.__state = 'arm'
                     self.get_logger().info(f'Wait finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'arm':
                 self.currently_active_mode_id = Mode.ARM
@@ -250,6 +260,7 @@ class MissionDirector(Node):
                 if self.mode_feedback_.mode.mode_id == Mode.ARM and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'takeoff_after_landing'
                     self.get_logger().info(f'Arm finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'takeoff_after_landing':
                 self.currently_active_mode_id = Mode.TAKEOFF
@@ -268,6 +279,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_small_platform'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             case 'line_follower_to_small_platform':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35'])) # Follow the line to the specified land marker
@@ -288,6 +300,7 @@ class MissionDirector(Node):
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_sample'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
 
             # ----- CHANGE HERE TO SKIP SAMPLE -----
             case 'line_follower_to_sample':
