@@ -42,7 +42,7 @@ private:
 	float lateral_vel;			   	// Lateral velocity in m/s 
 	float yaw_reference;			// Yaw reference in radians
 	float yaw_running_average;		// Running average of the yaw for filtering
-	float alpha = 0.4;
+	float alpha = 0.05;
 
 	float desired_altitude = 1.5; // Takeoff altitude in meters (negative up)
 
