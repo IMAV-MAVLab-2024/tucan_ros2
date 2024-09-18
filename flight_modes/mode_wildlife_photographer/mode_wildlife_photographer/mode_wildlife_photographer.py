@@ -58,6 +58,15 @@ class ModeWildlifePhotographer(Node):
         self.yaw_tolerance = 0.1
 
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
+
+        self.aruco_x_emwa = None
+        self.aruco_y_emwa = None
+        self.aruco_z_emwa = None
+        self.aruco_yaw_emwa = None
+
+        self.emwa_id = None
+        self.alpha = 0.17
+        
         
         # settings
         self.forward_pos_gain = 0.2
@@ -100,13 +109,17 @@ class ModeWildlifePhotographer(Node):
                 self.get_logger().info('No photo taken, aligning to wildlife')
                 if msg.detected:
                     if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                        # offsets are between -0.5 and 0.5 and flipped to the FRD frame
-                        #self.get_logger().info(f'AR marker detected with ID {msg.id}')
-                        #self.get_logger().info(f'Flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
-                        self.ar_x = msg.x_global
-                        self.ar_y = msg.y_global
-                        self.ar_z = msg.z_global
-                        self.ar_yaw = msg.yaw
+                        if not self.emwa_id or self.emwa_id != msg.id:
+                            self.aruco_x_emwa = msg.x_global
+                            self.aruco_y_emwa = msg.y_global
+                            self.aruco_z_emwa = msg.z_global
+                            self.aruco_yaw_emwa = msg.yaw
+
+                        self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
+                        self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
+                        self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
+                        self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
+                        self.emwa_id = msg.id
                         self.publish_trajectory_setpoint()
                 elif msg.id != 0: # ie an ar marker has been preiously found
                     time_difference = self.get_clock().now() - Time.from_msg(msg.last_detection_timestamp)
@@ -118,11 +131,17 @@ class ModeWildlifePhotographer(Node):
 
                     if time_difference_seconds < self.last_ar_time_tolerance:
                         if self.desired_ar_id is None or self.desired_ar_id == msg.id:
-                            #self.get_logger().info(f'No AR marker detected, flying to x: {self.ar_x}, y: {self.ar_y}, z: {self.ar_z}')
-                            self.ar_x = msg.x_global
-                            self.ar_y = msg.y_global
-                            self.ar_z = msg.z_global
-                            self.ar_yaw = msg.yaw
+                            if not self.emwa_id or self.emwa_id != msg.id:
+                                self.aruco_x_emwa = msg.x_global
+                                self.aruco_y_emwa = msg.y_global
+                                self.aruco_z_emwa = msg.z_global
+                                self.aruco_yaw_emwa = msg.yaw
+
+                            self.aruco_x_emwa = self.alpha * msg.x_global + (1 - self.alpha) * self.aruco_x_emwa
+                            self.aruco_y_emwa = self.alpha * msg.y_global + (1 - self.alpha) * self.aruco_y_emwa
+                            self.aruco_z_emwa =  self.alpha * msg.z_global + (1 - self.alpha) * self.aruco_z_emwa
+                            self.aruco_yaw_emwa = self.alpha * msg.yaw + (1 - self.alpha) * self.aruco_yaw_emwa
+                            self.emwa_id = msg.id
                             self.publish_trajectory_setpoint()
                 
                 # Check if yaw is achieved
@@ -153,14 +172,14 @@ class ModeWildlifePhotographer(Node):
     def publish_trajectory_setpoint(self):
         msg = px4_msgs.TrajectorySetpoint()
 
-        x_desired = self.ar_x
-        y_desired = self.ar_y
-        z_desired = self.ar_z - self.desired_alt
-
-        if self.ar_yaw is None or self.desired_yaw is None:
+        x_desired = self.aruco_x_emwa
+        y_desired = self.aruco_y_emwa
+        z_desired = self.aruco_z_emwa - self.desired_alt
+        
+        if self.aruco_yaw_emwa is None or self.desired_yaw is None:
             desired_yaw = self.start_yaw
         else:
-            desired_yaw = self.ar_yaw + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
+            desired_yaw = self.aruco_yaw_emwa + self.desired_yaw # orient yourself to pi/2 w.r.t. the marker
 
         msg.position = [float(x_desired), float(y_desired), float(z_desired)]
         #self.get_logger().info(f'x_des: {x_desired}, y_des: {y_desired}, z_des: {z_desired}')
