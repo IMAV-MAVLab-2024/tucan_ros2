@@ -230,7 +230,7 @@ class MissionDirector(Node):
                     self.__state = 'land'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
 
-            case 'land':      
+            case 'land':
                 self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35']))
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
 
@@ -239,18 +239,18 @@ class MissionDirector(Node):
                     self.get_logger().info(f'Landing finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
 
-            case 'wait':      
+            case 'wait':
                 if time.time() - self.start_start_time > self.wait_time:
                     self.__state = 'arm'
                     self.get_logger().info(f'Wait finished, switching to: {self.__state}')
 
-            case 'arm':      
-                self.currently_active_mode_id = Mode.ARM  
+            case 'arm':
+                self.currently_active_mode_id = Mode.ARM
 
                 if self.mode_feedback_.mode.mode_id == Mode.ARM and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'takeoff_after_landing'
                     self.get_logger().info(f'Arm finished, switching to: {self.__state}')
-                
+
             case 'takeoff_after_landing':
                 self.currently_active_mode_id = Mode.TAKEOFF
 
@@ -258,13 +258,13 @@ class MissionDirector(Node):
                     self.__state = 'hover_after_landing'
                     self.get_logger().info(f'Takeoff finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
-            
+
             case 'hover_after_landing':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35']))
                 self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['platform_35']))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=2.5))
                 self.currently_active_mode_id = Mode.HOVER  
-                #run for 10 seconds
+
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_small_platform'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
@@ -273,7 +273,7 @@ class MissionDirector(Node):
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['platform_35'])) # Follow the line to the specified land marker
                 self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
-                
+
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_small_platform'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
@@ -284,7 +284,7 @@ class MissionDirector(Node):
                 self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['platform_20']))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.HOVER  
-                #run for 10 seconds
+
                 if time.time() - self.start_start_time > self.hover_time:
                     self.__state = 'line_follower_to_sample'
                     self.get_logger().info(f'Hover finished, switching to: {self.__state}')
@@ -294,95 +294,47 @@ class MissionDirector(Node):
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['sample'])) # Follow the line to the sample
                 self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
-                
+
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    #self.__state = 'hover_before_pickup' # change this target state to 'line_follower_to_start'
+
                     self.__state = 'line_follower_to_placement'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
-            
-            case 'hover_before_pickup':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['sample']))
-                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['sample']))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
-                self.currently_active_mode_id = Mode.HOVER  
 
-                if time.time() - self.start_start_time > self.hover_time:
-                    self.__state = 'pickup_sample'
-                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
-            
-            case 'pickup_sample':
-                self.currently_active_mode_id = Mode.PICKUP_SAMPLE
-
-                if self.mode_feedback_.mode.mode_id == Mode.PICKUP_SAMPLE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'line_follower_to_placement'
-                    self.get_logger().info(f'Pickup finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
-
-            case 'hover_after_pickup':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['sample']))
-                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['sample']))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
-                self.currently_active_mode_id = Mode.HOVER  
-
-                if time.time() - self.start_start_time > self.hover_time:
-                    self.__state = 'pickup_sample'
-                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
-            
             case 'line_follower_to_placement':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['placement']))
                 self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
-                
+
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     #self.__state = 'place_sample'
                     self.__state = 'line_follower_to_start'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
-            
-            case 'hover_before_placement':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['placement']))
-                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['placement']))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
-                self.currently_active_mode_id = Mode.HOVER
 
-                if time.time() - self.start_start_time > self.hover_time:
-                    self.__state = 'place_sample'
-                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')
-
-            case 'place_sample':
-                self.currently_active_mode_id = Mode.PLACE_SAMPLE
-
-                if self.mode_feedback_.mode.mode_id == Mode.PLACE_SAMPLE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'line_follower_to_start'
-                    self.get_logger().info(f'Place finished, switching to: {self.__state}')
-                    self.start_start_time = time.time()
-            
-            case 'hover_after_placement':
-                self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['placement']))
-                self.hover_relative_yaw_pub.publish(std_msgs.Float32(data=self.desired_relative_yaw_dict['placement']))
-                self.hover_altitude_pub.publish(std_msgs.Float32(data=self.hover_altitude))
-                self.currently_active_mode_id = Mode.HOVER
-
-                if time.time() - self.start_start_time > self.hover_time:
-                    self.__state = 'place_sample'
-                    self.get_logger().info(f'Hover finished, switching to: {self.__state}')               
-            
             case 'line_follower_to_start':
                 self.line_follower_id_pub.publish(std_msgs.Int32(data=self.marker_ids['start']))
                 self.line_follower_altitude_pub(std_msgs.Float32(data=self.hover_altitude))
                 self.currently_active_mode_id = Mode.LINE_FOLLOWER  
-                
+
                 if self.mode_feedback_.mode.mode_id == Mode.LINE_FOLLOWER and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
-                    self.__state = 'hover_start'
+                    self.__state = 'land_on_start'
                     self.get_logger().info(f'Line_follower finished, switching to: {self.__state}')
                     self.start_start_time = time.time()
-            
+
+            case 'land_on_start':
+                self.land_ar_id_pub.publish(std_msgs.Int32(data=self.marker_ids['start']))
+                self.currently_active_mode_id = Mode.PRECISION_LANDING  
+
+                if self.mode_feedback_.mode.mode_id == Mode.PRECISION_LANDING and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'mission_finished'
+                    self.get_logger().info(f'Landing finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()
+
             case 'mission_finished':
                 self.get_logger().info(f'MISSION ENDED')
                 pass
 
-        
         if self.currently_active_mode_id is not None:
             #self.get_logger().debug(f'Currently active mode: {self.currently_active_mode_id}')
             msg = Mode()
@@ -390,14 +342,14 @@ class MissionDirector(Node):
             self.mode_publisher.publish(msg)
 
         self.__publish_state()
-    
+
     def __publish_state(self):
         """Publish the current state to the mission_state topic
         """
         msg = std_msgs.String()
         msg.data = self.__state
         self.state_publisher.publish(msg)
-    
+
     def __mode_status_callback(self, msg):
         # MODE_ERROR = 0         # Something went wrong
         # MODE_INACTIVE = 1      # Mode is inactive
@@ -407,7 +359,7 @@ class MissionDirector(Node):
         if msg.mode.mode_id == self.currently_active_mode_id:
             self.mode_feedback_ = msg
             self.__run_state_machine()
-        
+
 def main(args=None):
     rclpy.init(args=args)
     mission_director = MissionDirector()
