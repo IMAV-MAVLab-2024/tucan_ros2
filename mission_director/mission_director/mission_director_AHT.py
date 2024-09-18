@@ -53,10 +53,10 @@ class MissionDirector(Node):
 
         self.hover_time = 5.
 
-        self.start_marker_id = 100
-        self.end_marker_id = 300
+        self.start_marker_id = 302
+        self.end_marker_id = 303
 
-        self.marker_gate_end = 205
+        self.marker_gate_end = 302
 
 
     def __run_state_machine(self):
@@ -77,7 +77,7 @@ class MissionDirector(Node):
 
             case 'hover_stay':
                 self.hover_ar_id_pub.publish(std_msgs.Int32(data=self.start_marker_id))
-                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(math.pi)))
+                self.hover_desired_yaw_pub.publish(std_msgs.Float32(data=float(0.0)))
                 self.hover_altitude_pub.publish(std_msgs.Float32(data=float(1.0)))
                 self.currently_active_mode_id = Mode.HOVER
 
