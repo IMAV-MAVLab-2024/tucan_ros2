@@ -38,7 +38,7 @@ class ModeVerticalGate(Node):
 
         # publishers
         self.mode_status_publisher_ = self.create_publisher(ModeStatus, "/mode_status", 10)
-        self.control_mode_publisher_ = self.create_publisher(Mode, "/control_mode", 10)
+        self.control_mode_publisher_ = self.create_publisher(OffboardControlMode, "/control_mode", 10)
         self.setpoint_publisher_ = self.create_publisher(TrajectorySetpoint, "/trajectory_setpoint", 10)   
         
         self.position = [0.0, 0.0, 0.0]
