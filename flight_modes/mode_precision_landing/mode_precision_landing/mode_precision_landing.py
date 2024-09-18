@@ -78,7 +78,7 @@ class ModePrecisionLanding(Node):
 
         self.landing_started = False
         self.landing_finished = False
-        self.landing_tolerance = 0.2 # m, how close to the marker horizontally before we have to start descent
+        self.landing_tolerance = 0.4 # m, how close to the marker horizontally before we have to start descent
         self.landing_tolerance_sq = self.landing_tolerance  # because square roots are slow
 
         self.last_ar_time_tolerance = 3.5   # s, how long to use the last AR marker position after it has been lost
@@ -204,7 +204,7 @@ class ModePrecisionLanding(Node):
                     if -msg.position[2] > self.landing_tolerance:
                         self.maybe_landed = False
                         self.get_logger().info('maybe landed reset')
-                    elif time.time() - self.maybe_landed_start_time:
+                    elif (time.time() - self.maybe_landed_start_time) > self.landing_time:
                         self.disarming = True
                 else:
                     if -msg.position[2] < self.landing_tolerance:
