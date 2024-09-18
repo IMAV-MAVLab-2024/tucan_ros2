@@ -174,7 +174,6 @@ class MissionDirector(Node):
 
             case 'gate':
                 self.task_gate_id_pub.publish(std_msgs.Int32(data=self.marker_ids['gate_end'])) # publish the marker id after the gate
-                self.gate_desired_id
                 self.currently_active_mode_id = Mode.VERTICAL_GATE
                 if self.mode_feedback_.mode.mode_id == Mode.VERTICAL_GATE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
                     self.__state = 'hover_gate_end'

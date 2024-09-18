@@ -68,7 +68,7 @@ class ModeVerticalGate(Node):
         self.desired_y = self.vehicle_odom_.position[1] + (math.sin(self.start_yaw)*self.forward_setpoint)
 
         self.publish_trajectory_setpoint()
-        
+
     def __listener_callback(self, msg):
         if msg.mode_id == self.mode:
             if self.is_active == False:
@@ -83,7 +83,7 @@ class ModeVerticalGate(Node):
             self.publish_mode_status()
             if not self.finished:
                 self.execute()
-        
+
     def publish_mode_status(self):
         msg = ModeStatus()
         msg.mode.mode_id = self.mode
@@ -96,7 +96,7 @@ class ModeVerticalGate(Node):
             msg.mode_status = msg.MODE_INACTIVE
         msg.busy = self.is_active
         self.mode_status_publisher_.publish(msg)
-    
+
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
         msg.position = {self.desired_x, self.desired_y, -self.target_altitude}

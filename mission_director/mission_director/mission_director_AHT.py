@@ -36,6 +36,9 @@ class MissionDirector(Node):
 
         self.photographer_ar_id_pub = self.create_publisher(std_msgs.Int32, '/mode_photographer/desired_id',1)
 
+        # Gate publishers
+        self.task_gate_id_pub = self.create_publisher(std_msgs.Int32, 'mode_gate/desired_id', 1)
+
         self.start_time = None
 
         self.currently_active_mode_id = Mode.NO_MODE
@@ -52,6 +55,8 @@ class MissionDirector(Node):
 
         self.start_marker_id = 100
         self.end_marker_id = 300
+
+        self.marker_gate_end = 205
 
 
     def __run_state_machine(self):
@@ -98,9 +103,17 @@ class MissionDirector(Node):
                 self.currently_active_mode_id = Mode.HOVER 
 
                 if time.time() - self.start_time > self.hover_time:
-                    self.__state = 'land'
+                    self.__state = 'vertical_gate'
                     self.get_logger().info(f'hover_end finished, switching to: {self.__state}')
-                    self.start_time = time.time()                
+                    self.start_time = time.time()
+
+            case 'vertical_gate':
+                self.task_gate_id_pub.publish(std_msgs.Int32(data=self.marker_gate_end)) # publish the marker id after the gate
+                self.currently_active_mode_id = Mode.VERTICAL_GATE
+                if self.mode_feedback_.mode.mode_id == Mode.VERTICAL_GATE and self.mode_feedback_.mode_status == ModeStatus.MODE_FINISHED:
+                    self.__state = 'land'
+                    self.get_logger().info(f'Gate finished, switching to: {self.__state}')
+                    self.start_start_time = time.time()      
 
             case 'land':      
                 self.currently_active_mode_id = Mode.PRECISION_LANDING  
