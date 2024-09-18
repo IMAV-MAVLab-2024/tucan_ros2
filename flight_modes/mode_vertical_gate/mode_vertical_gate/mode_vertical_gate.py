@@ -56,7 +56,7 @@ class ModeVerticalGate(Node):
         if self.gate == 'bottom':
             self.target_altitude = 1.0 # Altitude of the bottom gate in meters
         
-        self.forward_setpoint = 0.5
+        self.forward_setpoint = 0.2
         
     def execute(self):
         """Execute the vertical gate mode.
