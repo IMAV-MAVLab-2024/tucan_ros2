@@ -92,6 +92,8 @@ void ModeLineFollower::publish_setpoint()
 	TrajectorySetpoint msg{};
 	// msg.velocity = {x_picture/1000, y_picture/1000, 0.0};
 
+	float x_desired = 0.0;
+	float y_desired = 0.0;
 	rclcpp::Duration elapsed_time = this->get_clock()->now() - start_time;
 	if (elapsed_time.seconds() < go_forward_time){
 		float x_forward_dir = cos(start_yaw);
@@ -107,9 +109,6 @@ void ModeLineFollower::publish_setpoint()
 	}else{
 		float x_forward_dir = cos(yaw_reference);
 		float y_forward_dir = sin(yaw_reference);
-
-		float x_desired = 0.0;
-		float y_desired = 0.0;
 
 		if (lateral_offset > 50 || lateral_offset < -50){ // towards the right
 			x_desired = vehicle_odom_.position[0] + x_offset_dir * sideward_gain + forward_gain * x_forward_dir;
